@@ -1,0 +1,2 @@
+# dotschedule_backend_v2
+dotscheduleのgo版のバックエンド処理
