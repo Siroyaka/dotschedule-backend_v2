@@ -13,3 +13,25 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# sqlite data directory
+sqlite
+*.db
+
+# config directory
+config
+
+data
+
+test_project
+
+# code workspace
+*.code-workspace
+
+**/config.json
+app
+
+# 一時的
+docker-compose.yml
+dockerfile
+.dockerignore
