@@ -75,7 +75,7 @@ func main() {
 	)
 	defer fs.Close()
 
-	sqlHandler := infrastructure.NewSqliteHandler(sqlConfig.Read(config_sqlPath))
+	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
 
 	// repository

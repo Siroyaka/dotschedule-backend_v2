@@ -59,7 +59,7 @@ func main() {
 	common := utility.NewCommon(publicConfig)
 
 	// infrastructure
-	sqlHandler := infrastructure.NewSqliteHandler(sqlConfig.Read(config_sqlPath))
+	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
 
 	httpRequestHandler := infrastructure.NewHTTPRequest()

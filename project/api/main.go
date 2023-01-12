@@ -55,7 +55,7 @@ func main() {
 	rootConfig := config.ReadChild(config_root)
 	queryConfig := rootConfig.ReadChild(config_query)
 
-	sqlHandler := infrastructure.NewSqliteHandler(sqlConfig.Read(config_sqlPath))
+	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
 
 	common := utility.NewCommon(publicConfig)
@@ -92,8 +92,6 @@ func main() {
 		monthDataInteractor,
 		rootConfig.Read(config_contentType),
 	)
-
-
 
 	router := infrastructure.NewRouter(rootConfig.Read(config_port))
 	router.SetHandle(rootConfig.Read(config_scheduleRoute), scController.ScheduleRequestHandler())
