@@ -3,16 +3,16 @@ PROJECT_PATH="project"
 MAIN_FILE="main.go"
 
 PROJECT_NAME="api"
-go build -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags=release -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
 
 PROJECT_NAME="firestore_news"
-go build -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags=release -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
 
 PROJECT_NAME="migration"
-go build -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags=release -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
 
 PROJECT_NAME="rss"
-go build -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags=release -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
 
 PROJECT_NAME="youtube_schedule_data_update"
-go build -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -tags=release -o ./$OUTPUT_PATH/$PROJECT_NAME ./$PROJECT_PATH/$PROJECT_NAME/$MAIN_FILE
