@@ -170,7 +170,7 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 			continue
 		}
 
-		utility.LogDebug(fmt.Sprintf("insert: %s", seedSchedule.GetID()))
+		utility.LogInfo(fmt.Sprintf("insert: %s", seedSchedule.GetID()))
 
 		if err = intr.insertScheduleRepository.Insert(seedSchedule); err != nil {
 			utility.LogError(err.WrapError(fmt.Sprintf("insert error id: %s", seedSchedule.GetID())))
