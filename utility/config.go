@@ -1,12 +1,16 @@
 package utility
 
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+)
+
 type ConfigData map[string]interface{}
 
 type Config struct {
 	configData ConfigData
 }
 
-func NewConfig(data ConfigData) IConfig {
+func NewConfig(data ConfigData) config.IConfig {
 	if data == nil {
 		return Config{make(ConfigData)}
 	}
@@ -68,7 +72,16 @@ func (c Config) ReadInteger(k string) int {
 	return int(result)
 }
 
-func (c Config) ReadChild(k string) IConfig {
+func (c Config) ReadBoolean(k string) bool {
+	c.check(k)
+	result, err := configRead[bool](c.configData[k])
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func (c Config) ReadChild(k string) config.IConfig {
 	c.check(k)
 	result, err := configRead[map[string]interface{}](c.configData[k])
 	if err != nil {

@@ -11,16 +11,17 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
 
 const (
-	configPath = "./config.json"
+	configPath  = "./config.json"
+	projectName = "API"
 
 	heartBeatRoute = "/"
 
 	config_public = "PUBLIC"
 	config_sql    = "SQLITE"
-	config_root   = "API"
 
 	config_sqlPath          = "PATH"
 	config_sqlDataSplitter  = "DATA_SPLITTER"
@@ -46,13 +47,20 @@ func heartBeat(w http.ResponseWriter, r *http.Request) {
 func main() {
 	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
 
-	config, err := confLoader.ReadJsonConfig(configPath)
+	configValue, err := confLoader.ReadJsonConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config.Setup(projectName, configValue)
+
+	if err := utility.LoggerSetup(); err != nil {
+		log.Fatal(err)
+	}
+
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
-	rootConfig := config.ReadChild(config_root)
+	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))

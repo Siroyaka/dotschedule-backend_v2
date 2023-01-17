@@ -12,14 +12,15 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
 
 const (
-	configPath = "./config.json"
+	configPath  = "./config.json"
+	projectName = "FIRESTORE_NEWS"
 
 	config_public            = "PUBLIC"
 	config_sql               = "SQLITE"
-	config_root              = "FIRESTORE_NEWS"
 	config_query             = "QUERY"
 	config_firestoreDocument = "DOCUMENT_NAME"
 
@@ -56,13 +57,21 @@ func main() {
 
 	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
 
-	config, err := confLoader.ReadJsonConfig(configPath)
+	configValue, err := confLoader.ReadJsonConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config.Setup(projectName, configValue)
+
+	if err := utility.LoggerSetup(); err != nil {
+		log.Fatal(err)
+	}
+
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
-	rootConfig := config.ReadChild(config_root)
+
+	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 	firestoreDocumentConfig := rootConfig.ReadChild(config_firestoreDocument)
 

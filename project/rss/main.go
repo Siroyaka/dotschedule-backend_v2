@@ -11,14 +11,15 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
 
 const (
-	configPath = "./config.json"
+	configPath  = "./config.json"
+	projectName = "RSS"
 
 	config_public = "PUBLIC"
 	config_sql    = "SQLITE"
-	config_root   = "RSS"
 	config_query  = "QUERY"
 
 	config_sqlPath                 = "PATH"
@@ -46,13 +47,20 @@ const (
 func main() {
 	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
 
-	config, err := confLoader.ReadJsonConfig(configPath)
+	configValue, err := confLoader.ReadJsonConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config.Setup(projectName, configValue)
+
+	if err := utility.LoggerSetup(); err != nil {
+		log.Fatal(err)
+	}
+
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
-	rootConfig := config.ReadChild(config_root)
+	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 
 	// import

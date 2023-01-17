@@ -12,14 +12,15 @@ import (
 	infraYoutube "github.com/Siroyaka/dotschedule-backend_v2/infrastructure/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
 
 const (
-	configPath = "./config.json"
+	configPath  = "./config.json"
+	projectName = "YOUTUBE_SCHEDULE_DATA_UPDATE"
 
 	config_public = "PUBLIC"
 	config_sql    = "SQLITE"
-	config_root   = "YOUTUBE_SCHEDULE_DATA_UPDATE"
 	config_parser = "PARSER"
 	config_query  = "QUERY"
 
@@ -49,13 +50,20 @@ const (
 func main() {
 	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
 
-	config, err := confLoader.ReadJsonConfig(configPath)
+	configValue, err := confLoader.ReadJsonConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config.Setup(projectName, configValue)
+
+	if err := utility.LoggerSetup(); err != nil {
+		log.Fatal(err)
+	}
+
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
-	rootConfig := config.ReadChild(config_root)
+	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 	parserConfig := rootConfig.ReadChild(config_parser)
 

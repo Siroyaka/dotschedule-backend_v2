@@ -19,19 +19,17 @@ sqlite
 *.db
 
 # config directory
-config
-
 data
 
-test_project
+project/test_project
 
 # code workspace
 *.code-workspace
 
 **/config.json
 app
+api
 
 # 一時的
-docker-compose.yml
-dockerfile
 .dockerignore
+api_dockers

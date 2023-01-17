@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
 
 type Common struct {
@@ -25,7 +27,7 @@ const (
 	config_timeLocation = "LOCAL_LOCATION"
 )
 
-func NewCommon(config IConfig) Common {
+func NewCommon(config config.IConfig) Common {
 	return Common{
 		timeFormat:   config.Read(config_timeFormat),
 		dateFormat:   config.Read(config_dateFormat),
@@ -192,4 +194,12 @@ func (hash HashSet[X]) Any() bool {
 		return true
 	}
 	return false
+}
+
+func ConditionalOperator[X any](flg bool, trueValue, falseValue X) X {
+	if flg {
+		return trueValue
+	} else {
+		return falseValue
+	}
 }
