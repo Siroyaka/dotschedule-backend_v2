@@ -121,7 +121,7 @@ func (intr RSSInteractor) rssDataConverter(data, platformType, feedStatus, video
 		seedScheduleList = append(seedScheduleList, seedSchedule)
 	}
 	if len(oldContents) > 0 {
-		//utility.LogDebug(fmt.Sprintf("old contents: %s", strings.Join(oldContents, ",")))
+		utility.LogDebug(fmt.Sprintf("old contents: %s", strings.Join(oldContents, ",")))
 	}
 	return seedScheduleList, nil
 }

@@ -20,6 +20,7 @@ type IFeedItem interface {
 	GetTitle() string
 	GetLink() string
 	GetUpdateAt() string
+	GetPublishedAt() string
 }
 
 type Feed struct {
@@ -51,7 +52,7 @@ func (rp RSSParser) Parse(text string) (IFeed, IError) {
 func getExtensionValue(extensions ext.Extensions, element string, children ...string) (string, string, map[string]string) {
 	extMap := extensions[element]
 
-	if extMap == nil || len(extMap) == 0 {
+	if len(extMap) == 0 {
 		return "", "", nil
 	}
 	if len(children) == 0 {
@@ -61,7 +62,7 @@ func getExtensionValue(extensions ext.Extensions, element string, children ...st
 	var ext ext.Extension
 	for _, child := range children {
 		extList := extMap[child]
-		if extList == nil || len(extList) == 0 {
+		if len(extList) == 0 {
 			return "", "", nil
 		}
 		ext = extList[0]
@@ -107,5 +108,9 @@ func (fi FeedItem) GetLink() string {
 }
 
 func (fi FeedItem) GetUpdateAt() string {
+	return fi.item.UpdatedParsed.UTC().Format(fi.timeFormat)
+}
+
+func (fi FeedItem) GetPublishedAt() string {
 	return fi.item.PublishedParsed.UTC().Format(fi.timeFormat)
 }
