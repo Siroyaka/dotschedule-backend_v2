@@ -78,7 +78,7 @@ func (intr *FirestoreNewsInteractor) DataFetchFromFirestore() utility.IError {
 	}
 	targetTime := now.Add(0, 0, 0, 0, -1*intr.firestoreTargetMin, 0)
 
-	utility.LogDebug(fmt.Sprintf("firestore target time: %s - %s", targetTime.ToLocalFormatString(), now.ToLocalFormatString()))
+	utility.LogInfo(fmt.Sprintf("target time UTC: %s - %s, Local: %s - %s", targetTime.ToUTCFormatString(), now.ToUTCFormatString(), targetTime.ToLocalFormatString(), now.ToLocalFormatString()))
 
 	list, err := intr.getFirestoreNewsRepos.Get(intr.converter, targetTime)
 	if err != nil {
