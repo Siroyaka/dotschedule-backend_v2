@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
@@ -57,12 +56,4 @@ func (intr MonthInteractor) GetMonthData(baseDate utility.WrappedTime) ([]domain
 	// Therefore add date then add month then sub date.
 	toDate := fromDate.Add(0, 0, 1, 0, 0, 0).Add(0, 1, 0, 0, 0, 0).Add(0, 0, -1, 0, 0, 0)
 	return intr.getRepository.GetMonthData(fromDate, toDate, intr.displayScheduleStatus, intr.dataAdapter)
-}
-
-func MonthDataToResponseJson(list []domain.MonthData) (string, utility.IError) {
-	responseJson, err := json.Marshal(list)
-	if err != nil {
-		return "", utility.NewError(err.Error(), utility.ERR_JSONPARSE)
-	}
-	return string(responseJson), nil
 }

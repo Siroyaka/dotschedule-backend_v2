@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
@@ -55,7 +56,9 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	json, err := usecase.MonthDataToResponseJson(list)
+	d := domain.NewAPIResponseData("ok", len(list), "", list)
+
+	json, err := d.ToJson()
 
 	if err != nil {
 		utility.LogError(err.WrapError())

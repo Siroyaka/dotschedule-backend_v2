@@ -54,7 +54,7 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	json, err := usecase.ScheduleDataToResponseJson(list)
+	json, err := c.scheduleIntr.ToJson(list)
 
 	if err != nil {
 		utility.LogFatal(err.WrapError())

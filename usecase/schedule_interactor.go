@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
@@ -76,8 +75,9 @@ func (intr ScheduleInteractor) GetScheduleData(baseDate utility.WrappedTime) ([]
 	return intr.getRepos.GetScheduleData(fromDate, toDate, intr.displayScheduleStatus, intr.dataAdapter)
 }
 
-func ScheduleDataToResponseJson(list []domain.ScheduleData) (string, utility.IError) {
+func (intr ScheduleInteractor) ToJson(list []domain.ScheduleData) (string, utility.IError) {
 	var res []map[string]interface{}
+	len := 0
 	for _, v := range list {
 		m := make(map[string]interface{})
 		m["StreamerID"] = v.StreamerID
@@ -90,10 +90,9 @@ func ScheduleDataToResponseJson(list []domain.ScheduleData) (string, utility.IEr
 		m["Duration"] = v.Duration
 		m["Participants"] = v.ParticipantsList
 		res = append(res, m)
+		len++
 	}
-	responseJson, err := json.Marshal(res)
-	if err != nil {
-		return "", utility.NewError(err.Error(), utility.ERR_JSONPARSE)
-	}
-	return string(responseJson), nil
+	d := domain.NewAPIResponseData("ok", len, "", res)
+	return d.ToJson()
+
 }
