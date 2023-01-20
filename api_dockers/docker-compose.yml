@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile
+      target: api_release
+    image: api:1.0.0
+    volumes:
+      - type: bind
+        source: ../config.json
+        target: /usr/src/app/config.json
+      - type: bind
+        source: ../sqlite
+        target: /usr/src/app/sqlite
+      - type: bind
+        source: ../data/log/api
+        target: /usr/src/app/log
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${ROUTER_NAME}.rule=Host(`${API_HOST}`)
+networks:
+  default:
+    name: reverseproxy_web
+    external: true

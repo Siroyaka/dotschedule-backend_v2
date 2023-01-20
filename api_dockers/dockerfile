@@ -1,0 +1,9 @@
+FROM gcr.io/distroless/static-debian11 AS api_release
+
+WORKDIR /usr/src/app
+
+COPY api ./
+
+EXPOSE 8080
+
+CMD [ "./api" ]

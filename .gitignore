@@ -32,4 +32,8 @@ api
 
 # 一時的
 .dockerignore
-api_dockers
+
+# api_dockers
+api_dockers/*
+!api_dockers/docker-compose.yml
+!api_dockers/dockerfile
