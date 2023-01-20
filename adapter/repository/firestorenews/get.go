@@ -26,7 +26,7 @@ func NewGetRepository(
 	documentNameVideoStatus,
 	documentNameParticipants,
 	documentNameUpdateAt string,
-) firestorenews.GetRepository {
+) GetRepository {
 	return GetRepository{
 		firestore:                firestore,
 		collectionName:           collectionName,
