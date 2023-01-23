@@ -40,17 +40,17 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		utility.LogError(err.WrapError())
-		//c.loggerInteractor.Error(fmt.Sprintf("Date parse error: %s", month), err, 0)
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Invalid Month Format: %s", month)
 		return
 	}
 
+	utility.LogInfo(fmt.Sprintf("Month Request: %s", baseDate.ToUTCFormatString()))
+
 	list, err := c.monthInteractor.GetMonthData(baseDate)
 
 	if err != nil {
 		utility.LogError(err.WrapError())
-		//c.loggerInteractor.Fatal(fmt.Sprintf("Data fetch error: %s", month), err, 0)
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Data Fetch Error: %s", month)
 		return

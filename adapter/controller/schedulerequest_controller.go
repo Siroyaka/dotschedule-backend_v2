@@ -44,6 +44,8 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	utility.LogInfo(fmt.Sprintf("Schedule Request: %s", baseDate.ToUTCFormatString()))
+
 	list, err := c.scheduleIntr.GetScheduleData(baseDate)
 
 	if err != nil {
