@@ -49,9 +49,7 @@ func main() {
 
 	config.Setup(projectName, configValue)
 
-	if err := utility.LoggerStart(); err != nil {
-		log.Fatal(err)
-	}
+	utility.LoggerStart()
 
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)

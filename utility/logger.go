@@ -18,26 +18,18 @@ const (
 	logConfigName            = "NAME"
 	logConfigTimeFormat      = "TIME_FORMAT"
 	logConfigOSOutput        = "OS_OUTPUT"
-	logConfigSwitcher        = "SWITCHER"
+	logConfigIsFileSwitch    = "FILE_SWITCH_OF_TIME"
 	defaultLogDir            = "./"
 	defaultLogName           = "default"
 	defaultLogFileTimeFormat = "20060102"
 	defaultLogOSOutput       = true
+	defaultLogSwitch         = false
 )
 
 var (
-	logger_Time     = ""
-	logger_switcher = "none"
-	logDir          = ""
-	logName         = ""
-	logOSOutput     = true
-	logTimeFormat   = ""
+	suffix      = ""
+	logIsSwitch = defaultLogSwitch
 )
-
-func nowTime(format string) string {
-	now := time.Now()
-	return now.UTC().Format(format)
-}
 
 func loadLoggerConfig() config.IConfig {
 	if projectConfig := config.ReadProjectConfig(); projectConfig != nil && projectConfig.Has(logConfigParent) {
@@ -46,56 +38,115 @@ func loadLoggerConfig() config.IConfig {
 	return nil
 }
 
-func loggerConfigSetup() (string, bool, IError) {
-	logDir = defaultLogDir
-	logName = defaultLogName
-	logTimeFormat = defaultLogFileTimeFormat
-	logOSOutput = defaultLogOSOutput
-
-	// read config
-	logConfig := loadLoggerConfig()
-	if logConfig != nil {
-		if logConfig.Has(logConfigDir) {
-			logDir = logConfig.Read(logConfigDir)
-		}
-		if logConfig.Has(logConfigName) {
-			logName = logConfig.Read(logConfigName)
-		}
-		if logConfig.Has(logConfigTimeFormat) {
-			logTimeFormat = logConfig.Read(logConfigTimeFormat)
-		}
-		if logConfig.Has(logConfigOSOutput) {
-			logOSOutput = logConfig.ReadBoolean(logConfigOSOutput)
-		}
-		if logConfig.Has(logConfigSwitcher) {
-			switch sw := logConfig.Read(logConfigSwitcher); sw {
-			case "TIME":
-				logger_switcher = sw
-			default:
-				logger_switcher = "none"
-			}
-		}
+func loadLogFileTimeFormat(loggerConfig config.IConfig) string {
+	if loggerConfig == nil {
+		return defaultLogFileTimeFormat
 	}
 
+	if !loggerConfig.Has(logConfigTimeFormat) {
+		return defaultLogFileTimeFormat
+	}
+
+	return loggerConfig.Read(logConfigTimeFormat)
+}
+
+func isLogOsOutput(loggerConfig config.IConfig) bool {
+	if loggerConfig != nil && loggerConfig.Has(logConfigOSOutput) {
+		return loggerConfig.ReadBoolean(logConfigOSOutput)
+	}
+	return defaultLogOSOutput
+}
+
+func loadLogFileBasics(loggerConfig config.IConfig) (string, string) {
+	if loggerConfig == nil {
+		return defaultLogDir, defaultLogName
+	}
+
+	logDir := ""
+	logName := ""
+
+	if loggerConfig.Has(logConfigDir) {
+		logDir = loggerConfig.Read(logConfigDir)
+	} else {
+		logDir = defaultLogDir
+	}
+
+	if loggerConfig.Has(logConfigName) {
+		logName = loggerConfig.Read(logConfigName)
+	} else {
+		logName = defaultLogName
+	}
+
+	return logDir, logName
+}
+
+func isLogConfigSwitch(loggerConfig config.IConfig) bool {
+	if loggerConfig == nil {
+		return false
+	}
+
+	if !loggerConfig.Has(logConfigIsFileSwitch) {
+		return false
+	}
+
+	return loggerConfig.ReadBoolean(logConfigIsFileSwitch)
+}
+
+func makeLogFilePath(logDir, logName, logSuffix string) string {
 	if logDir == "" {
-		return "", logOSOutput, nil
+		return ""
 	}
 
 	if f, err := os.Stat(logDir); os.IsNotExist(err) || !f.IsDir() {
-		return "", logOSOutput, NewError(err.Error(), "")
+		LogError(NewError(err.Error(), ""))
+		return ""
 	}
-	t := nowTime(logTimeFormat)
 
-	logFileName := fmt.Sprintf("%s_%s.log", logName, t)
-	return filepath.Join(logDir, logFileName), logOSOutput, nil
+	logFileName := fmt.Sprintf("%s_%s.log", logName, logSuffix)
+	return filepath.Join(logDir, logFileName)
+}
+
+func makeLogFileSuffix(loggerConfig config.IConfig) string {
+	if loggerConfig == nil {
+		return ""
+	}
+	timeFormat := loadLogFileTimeFormat(loggerConfig)
+	return time.Now().Format(timeFormat)
 }
 
 func loggerSwitch() {
-	switch logger_switcher {
-	case "none":
+	if !logIsSwitch {
 		return
-	default:
-		panic(fmt.Sprintf("logger switcher case error. %s", logger_switcher))
+	}
+
+	loggerConfig := loadLoggerConfig()
+	if loggerConfig == nil {
+		return
+	}
+
+	newSuffix := makeLogFileSuffix(loggerConfig)
+	if suffix == newSuffix {
+		return
+	}
+
+	suffix = newSuffix
+
+	logDir, logName := loadLogFileBasics(loggerConfig)
+
+	logFilePath := makeLogFilePath(logDir, logName, suffix)
+
+	if logFilePath == "" {
+		return
+	}
+
+	logIsSwitch = isLogConfigSwitch(loggerConfig)
+
+	isOsOutput := isLogOsOutput(loggerConfig)
+
+	err := loggerSetup(logFilePath, isOsOutput)
+	if err != nil {
+		LogFatal(err.WrapError())
+		return
 	}
 }
 
@@ -112,36 +163,63 @@ func loggerSetup(logFilePath string, isOsOutput bool) IError {
 	return nil
 }
 
-func LoggerStart() IError {
-	logFilePath, isOsOutput, ierr := loggerConfigSetup()
-	if ierr != nil {
-		return ierr.WrapError()
+// 実行したディレクトリ直下にyyyyMMdd.logのファイルで出力し、コンソールにも出力する
+func defaultLoggerSetup() {
+	dateString := time.Now().Format(defaultLogFileTimeFormat)
+
+	logFileName := fmt.Sprintf("%s.log", dateString)
+
+	logFilePath := filepath.Join(defaultLogDir, logFileName)
+
+	loggerSetup(logFilePath, defaultLogOSOutput)
+}
+
+func LoggerStart() {
+	loggerConfig := loadLoggerConfig()
+
+	if loggerConfig == nil {
+		defaultLoggerSetup()
+		return
 	}
+
+	logDir, logName := loadLogFileBasics(loggerConfig)
+
+	suffix = makeLogFileSuffix(loggerConfig)
+
+	logFilePath := makeLogFilePath(logDir, logName, suffix)
+
 	if logFilePath == "" {
-		return nil
+		return
 	}
+
+	logIsSwitch = isLogConfigSwitch(loggerConfig)
+
+	isOsOutput := isLogOsOutput(loggerConfig)
 
 	err := loggerSetup(logFilePath, isOsOutput)
 	if err != nil {
-		return err.WrapError()
+		panic(err.Error())
 	}
-	return nil
 }
 
 func LogDebug(msg string) {
 	if mode.DEBUG {
+		loggerSwitch()
 		log.Printf("DEBUG\t%s\n", msg)
 	}
 }
 
 func LogInfo(msg string) {
+	loggerSwitch()
 	log.Printf("INFO\t%s\n", msg)
 }
 
 func LogError(err error) {
+	loggerSwitch()
 	log.Printf("ERROR\t%s\n", err)
 }
 
 func LogFatal(err error) {
+	loggerSwitch()
 	log.Printf("FATAL\t%s\n", err)
 }
