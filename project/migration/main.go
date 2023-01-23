@@ -49,7 +49,7 @@ func main() {
 
 	config.Setup(projectName, configValue)
 
-	if err := utility.LoggerSetup(); err != nil {
+	if err := utility.LoggerStart(); err != nil {
 		log.Fatal(err)
 	}
 
