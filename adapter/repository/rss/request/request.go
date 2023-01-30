@@ -24,7 +24,7 @@ func (r RequestRepository) Request(url string, converter rssrequest.RequestDataC
 	if err != nil {
 		return nil, err.WrapError()
 	}
-	utility.LogInfo(fmt.Sprintf("http request: {url: %s, status:%s, statusCode:%b}", url, a.Status(), a.StatusCode()))
+	utility.LogDebug(fmt.Sprintf("http request: {url: %s, status:%s, statusCode:%b}", url, a.Status(), a.StatusCode()))
 
 	return converter(a.Body())
 }

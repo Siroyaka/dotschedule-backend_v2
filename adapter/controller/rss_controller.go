@@ -17,17 +17,7 @@ func NewRSSController(intr usecase.RSSInteractor) RSSController {
 	}
 }
 
-func startExec() {
-	utility.LogInfo("start rss batch")
-}
-
-func endExec() {
-	utility.LogInfo("end rss batch")
-}
-
 func (rc RSSController) Exec() {
-	startExec()
-	defer endExec()
 	err := rc.intr.GetMaster()
 	if err != nil {
 		utility.LogFatal(err.WrapError())
@@ -62,5 +52,5 @@ func (rc RSSController) Exec() {
 		totalInsert += insert
 		totalUpdate += update
 	}
-	utility.LogInfo(fmt.Sprintf("RSSFeed insert: %d, update: %d", totalInsert, totalUpdate))
+	utility.LogInfo(fmt.Sprintf("Get RSSFeed data end. insert_count: %d, update_count: %d", totalInsert, totalUpdate))
 }

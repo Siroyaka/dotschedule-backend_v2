@@ -74,7 +74,7 @@ func (repos GetRepository) Get(
 		return
 	}
 
-	t := targetTime.ToLocalFormatString()
+	t := targetTime.ToUTCFormatString()
 	iter := repos.firestore.Collection(repos.collectionName).Where(repos.compareble, repos.operator, t).Documents(repos.firestore.GetContext())
 	var responseData []domain.FirestoreNews
 	for {
