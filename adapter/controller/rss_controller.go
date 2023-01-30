@@ -41,12 +41,21 @@ func (rc RSSController) Exec() {
 			utility.LogFatal(err.WrapError())
 			continue
 		}
-		insert, update, err := rc.intr.PushToDB(list)
+		insert, update, isError, newestUpdate, err := rc.intr.PushToDB(list)
 		if err != nil {
 			utility.LogFatal(err.WrapError())
 			continue
 		}
-		if err = rc.intr.EndRow(); err != nil {
+
+		if isError {
+			continue
+		}
+
+		if (insert + update) == 0 {
+			continue
+		}
+
+		if err = rc.intr.EndRow(newestUpdate); err != nil {
 			utility.LogFatal(err.WrapError())
 			continue
 		}

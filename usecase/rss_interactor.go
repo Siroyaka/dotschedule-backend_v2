@@ -94,35 +94,31 @@ func (intr RSSInteractor) rssDataConverter(data, platformType, feedStatus, video
 		return nil, err.WrapError()
 	}
 
-	isOldItem := func(item utility.IFeedItem) bool {
-		feedTime, err := common.CreateNewWrappedTimeFromUTC(item.GetUpdateAt())
-		if err != nil {
-			utility.LogError(err.WrapError(fmt.Sprintf("feed updatetime parse error: %s", item.GetTitle())))
-			return true
-		}
-		return feedTime.Before(master.LastUpdate)
-	}
-
-	var oldContents []string
 	var seedScheduleList []domain.SeedSchedule
 	for i := 0; i < feed.GetItemLength(); i++ {
 		feedItem := feed.GetItem(i)
 		if feedItem == nil {
-			utility.LogError(utility.NewError(fmt.Sprintf("items out of index: %v", i), utility.ERR_RSS_PARSE))
+			utility.LogError(utility.NewError(fmt.Sprintf("items out of index. index: %v", i), utility.ERR_RSS_PARSE))
 			continue
 		}
-		if isOldItem(feedItem) {
-			oldContents = append(oldContents, feedItem.GetTitle())
+
+		feedPublishedAt, err := common.CreateNewWrappedTimeFromUTC(feedItem.GetPublishedAt())
+		if err != nil {
+			utility.LogError(err.WrapError(fmt.Sprintf("feed updatetime parse error. Title: %s, UpdateTime: %s", feedItem.GetTitle(), feedItem.GetUpdateAt())))
 			continue
 		}
+
+		if !feedPublishedAt.After(master.LastUpdate) {
+			// feedPublishedAt <= master.LastUpdate
+			continue
+		}
+
 		_, videoId, _ := feedItem.GetExtension(videoIdElement, videoIdItemName)
 
-		seedSchedule := domain.NewSeedSchedule(videoId, platformType, feedStatus)
+		seedSchedule := domain.NewSeedSchedule(videoId, platformType, feedStatus, feedPublishedAt)
 		seedScheduleList = append(seedScheduleList, seedSchedule)
 	}
-	if len(oldContents) > 0 {
-		utility.LogDebug(fmt.Sprintf("old contents: %s", strings.Join(oldContents, ",")))
-	}
+
 	return seedScheduleList, nil
 }
 
@@ -136,7 +132,7 @@ func (intr RSSInteractor) GetRSSData() (list []domain.SeedSchedule, err utility.
 	converter := func(feedText string) (list []domain.SeedSchedule, err utility.IError) {
 		return intr.rssDataConverter(feedText, intr.platform, intr.insertStatus, intr.videoIdElement, intr.videoIdItemName, intr.common, targetMaster)
 	}
-	utility.LogInfo(fmt.Sprintf("feed request: %s %s", targetMaster.ID, targetMaster.Name))
+	utility.LogDebug(fmt.Sprintf("feed request: %s %s", targetMaster.ID, targetMaster.Name))
 
 	list, err = intr.requestRepository.Request(targetMaster.Url, converter)
 	if err != nil {
@@ -149,8 +145,13 @@ func (intr RSSInteractor) scheduleIsCompleteConverter(id string, iscomplete int)
 	return id, iscomplete == intr.completeStatus
 }
 
-func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, ierr utility.IError) {
+func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt utility.WrappedTime, ierr utility.IError) {
 	var idList []string
+	isError = false
+
+	master := intr.masterList[intr.index]
+	newestPublishedAt = master.LastUpdate
+
 	for _, seedSchedule := range list {
 		idList = append(idList, seedSchedule.GetID())
 	}
@@ -158,36 +159,58 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 	withIsComplete, err := intr.getScheduleRepository.Get(idList, intr.platform, intr.scheduleIsCompleteConverter)
 	if err != nil {
 		ierr = err.WrapError()
+		isError = true
 		return
 	}
 	var updateList []string
 
 	for _, seedSchedule := range list {
+		if seedSchedule.GetPublishedAt().After(newestPublishedAt) {
+			newestPublishedAt = seedSchedule.GetPublishedAt()
+		}
+
 		if withIsComplete.Has(seedSchedule.GetID()) {
+
+			// dbにあるデータがcomplete状態であれば更新する、そうでなければ更新もしない
 			if withIsComplete.IsComplete(seedSchedule.GetID()) {
 				updateList = append(updateList, seedSchedule.GetID())
 			}
 			continue
 		}
 
-		utility.LogInfo(fmt.Sprintf("insert: %s", seedSchedule.GetID()))
-
 		if err = intr.insertScheduleRepository.Insert(seedSchedule); err != nil {
-			utility.LogError(err.WrapError(fmt.Sprintf("insert error id: %s", seedSchedule.GetID())))
+			utility.LogError(err.WrapError(fmt.Sprintf("schedule insert error. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
+			isError = true
 			continue
 		}
+
+		utility.LogInfo(fmt.Sprintf("schedule insert finished. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID()))
+
 		insertCount++
 	}
 
 	if err = intr.updateScheduleRepository.Update(updateList, intr.platform, intr.notCompleteStatus); err != nil {
-		ierr = err.WrapError(fmt.Sprintf("update error id: %s", strings.Join(updateList, ",")))
+		ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+		isError = true
 		return
 	}
+
+	if updateList != nil {
+		utility.LogInfo(fmt.Sprintf("schedule update finished. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+	}
+
 	updateCount = len(updateList)
 	ierr = nil
 	return
 }
 
-func (intr RSSInteractor) EndRow() utility.IError {
-	return intr.updateMasterRepository.UpdateTime(intr.masterList[intr.index].ID, intr.startTime)
+func (intr RSSInteractor) EndRow(updateAt utility.WrappedTime) utility.IError {
+	master := intr.masterList[intr.index]
+
+	// マスターの更新日付より後の日付が渡されたら更新する
+	if updateAt.After(master.LastUpdate) {
+		return intr.updateMasterRepository.UpdateTime(master.ID, updateAt)
+	}
+
+	return nil
 }
