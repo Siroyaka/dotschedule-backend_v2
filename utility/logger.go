@@ -203,10 +203,12 @@ func LoggerStart() {
 }
 
 func LogDebug(msg string) {
-	if mode.DEBUG {
-		loggerSwitch()
-		log.Printf("DEBUG\t%s\n", msg)
+	if !mode.DEBUG {
+		return
 	}
+
+	loggerSwitch()
+	log.Printf("DEBUG\t%s\n", msg)
 }
 
 func LogInfo(msg string) {
