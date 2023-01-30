@@ -3,16 +3,16 @@ package domain
 import "github.com/Siroyaka/dotschedule-backend_v2/utility"
 
 type ScheduleData struct {
-	StreamerName, StreamerID, VideoLink string
-	VideoStatus                         VideoStatus
-	VideoTitle, Thumbnail               string
-	StartDate                           utility.WrappedTime
-	Duration                            int
-	ParticipantsList                    []ParticipantsData
+	StreamerName, StreamerID, StreamerIcon, VideoLink string
+	VideoStatus                                       VideoStatus
+	VideoTitle, Thumbnail                             string
+	StartDate                                         utility.WrappedTime
+	Duration                                          int
+	ParticipantsList                                  []ParticipantsData
 }
 
 func NewScheduleData(
-	streamerId, streamerName, videoLink string,
+	streamerId, streamerName, videoLink, streamerIcon string,
 	videoStatus int,
 	videoTitle, thumbnail string,
 	startDate utility.WrappedTime,
@@ -25,6 +25,7 @@ func NewScheduleData(
 	return ScheduleData{
 		StreamerID:       streamerId,
 		StreamerName:     streamerName,
+		StreamerIcon:     streamerIcon,
 		VideoLink:        videoLink,
 		VideoStatus:      vs,
 		VideoTitle:       videoTitle,

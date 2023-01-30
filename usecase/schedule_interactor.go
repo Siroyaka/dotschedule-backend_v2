@@ -47,6 +47,7 @@ func (intr ScheduleInteractor) dataAdapter(
 		streamer_id,
 		streamer_name,
 		url,
+		icon,
 		status,
 		title,
 		thumbnail,
@@ -88,6 +89,7 @@ func (intr ScheduleInteractor) ToJson(list []domain.ScheduleData) (string, utili
 		m["Thumbnail"] = v.Thumbnail
 		m["StartDate"] = v.StartDate.ToLocalFormatString()
 		m["Duration"] = v.Duration
+		m["StreamerIcon"] = v.StreamerIcon
 		m["Participants"] = v.ParticipantsList
 		res = append(res, m)
 		len++
