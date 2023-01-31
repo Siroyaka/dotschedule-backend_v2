@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -90,6 +91,44 @@ func (t *WrappedTime) ToLocalFormatString() string {
 		return ""
 	}
 	return t.time.In(tz).Format(t.baseFormat)
+}
+
+func (t *WrappedTime) ToLocalDateString(splitter string) string {
+	formatSplitter := ""
+	switch splitter {
+	case "/", "-":
+		formatSplitter = splitter
+	default:
+		LogInfo("unknown date split type " + splitter)
+		formatSplitter = "-"
+	}
+
+	format := fmt.Sprintf("2006%s01%s02", formatSplitter, formatSplitter)
+
+	tz, err := time.LoadLocation(t.localLocations)
+	if err != nil {
+		return ""
+	}
+	return t.time.In(tz).Format(format)
+}
+
+func (t *WrappedTime) ToLocalTimeString(splitter string) string {
+	formatSplitter := ""
+	switch splitter {
+	case ":", ".":
+		formatSplitter = splitter
+	default:
+		LogInfo("unknown time split type " + splitter)
+		formatSplitter = ":"
+	}
+
+	format := fmt.Sprintf("15%s04%s05", formatSplitter, formatSplitter)
+
+	tz, err := time.LoadLocation(t.localLocations)
+	if err != nil {
+		return ""
+	}
+	return t.time.In(tz).Format(format)
 }
 
 func (t *WrappedTime) ToUTCFormatString() string {
