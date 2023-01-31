@@ -40,11 +40,12 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 	if err != nil {
 		utility.LogError(err.WrapError())
 		w.WriteHeader(400)
-		fmt.Fprintf(w, "Invalid Date Format: %s", date)
+		fmt.Fprintf(w, "Invalid Date Format. RequestString: %s", date)
+		utility.LogInfo(fmt.Sprintf("Invalid Date Format. RequestString: %s", date))
 		return
 	}
 
-	utility.LogInfo(fmt.Sprintf("Schedule Request: %s", baseDate.ToUTCFormatString()))
+	utility.LogInfo(fmt.Sprintf("Schedule Request. Date: %s", baseDate.ToLocalDateString("/")))
 
 	list, err := c.scheduleIntr.GetScheduleData(baseDate)
 
