@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bytes"
 	"io"
 	"net"
 	"net/http"
@@ -35,6 +36,28 @@ func (hr HTTPRequest) Get(url string) (abstruct.HTTPResponse, utility.IError) {
 		Timeout: hr.timeout(),
 	}
 	res, err := client.Get(url)
+	if err, ok := err.(net.Error); ok && err.Timeout() {
+		return nil, utility.NewError(err.Error(), utility.ERR_HTTP_REQUEST_TIMEOUT)
+	} else if err != nil {
+		return nil, utility.NewError(err.Error(), utility.ERR_HTTP_REQUEST_ERROR)
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, utility.NewError(err.Error(), utility.ERR_HTTP_REQUEST_ERROR)
+	}
+	defer res.Body.Close()
+	return HTTPResponse{
+		status:     res.Status,
+		statusCode: res.StatusCode,
+		body:       body,
+	}, nil
+}
+
+func (hr HTTPRequest) Post(param abstruct.HTTPPostParams) (abstruct.HTTPResponse, utility.IError) {
+	client := &http.Client{
+		Timeout: hr.timeout(),
+	}
+	res, err := client.Post(param.Url(), param.ContentType(), bytes.NewBufferString(param.Content()))
 	if err, ok := err.(net.Error); ok && err.Timeout() {
 		return nil, utility.NewError(err.Error(), utility.ERR_HTTP_REQUEST_TIMEOUT)
 	} else if err != nil {
