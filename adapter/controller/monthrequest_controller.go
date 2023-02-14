@@ -41,11 +41,11 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		utility.LogError(err.WrapError())
 		w.WriteHeader(400)
-		fmt.Fprintf(w, "Invalid Month Format: %s", month)
+		fmt.Fprintf(w, "Invalid Month Format. %s", month)
 		return
 	}
 
-	utility.LogInfo(fmt.Sprintf("Month Request: %s", baseDate.ToUTCFormatString()))
+	utility.LogInfo(fmt.Sprintf("Month Request. month: %s", month))
 
 	list, err := c.monthInteractor.GetMonthData(baseDate)
 
