@@ -3,8 +3,11 @@ package interactor
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/discordpost"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
@@ -15,14 +18,17 @@ type NormalizationYoutubeDataInteractor struct {
 	getScheduleRepos               sqlwrapper.SelectRepository[domain.FullScheduleData]
 	updateScheduleRepos            sqlwrapper.UpdateRepository
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository
-	countParticipantsRepos         sqlwrapper.SelectRepository[int]
+	getParticipantsRepos           sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]]
 	insertParticipantsRepos        sqlwrapper.UpdateRepository
 	youtubeVideoListAPIRepos       youtubedataapi.VideoListRepository
-	common                         utility.Common
-	durationParser                 utility.YoutubeDurationParser
+	discordPostRepos               discordpost.DiscordPostRepository
+
+	common         utility.Common
+	durationParser utility.YoutubeDurationParser
 	platformType,
 	streamingUrlPrefix string
-	partList []string
+	partList                  []string
+	discordNortificationRange int
 }
 
 func NewNormalizationYoutubeDataInteractor(
@@ -30,28 +36,32 @@ func NewNormalizationYoutubeDataInteractor(
 	getScheduleRepos sqlwrapper.SelectRepository[domain.FullScheduleData],
 	updateScheduleRepos sqlwrapper.UpdateRepository,
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository,
-	countParticipantsRepos sqlwrapper.SelectRepository[int],
+	getParticipantsRepos sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]],
 	insertParticipantsRepos sqlwrapper.UpdateRepository,
 	youtubeVideoListAPIRepos youtubedataapi.VideoListRepository,
+	discordPostRepos discordpost.DiscordPostRepository,
 	common utility.Common,
 	durationParser utility.YoutubeDurationParser,
 	platformType,
 	streamingUrlPrefix string,
 	partList []string,
+	discordNortificationRange int,
 ) NormalizationYoutubeDataInteractor {
 	return NormalizationYoutubeDataInteractor{
 		getStreamerMasterRepos:         getStreamerMasterRepos,
 		getScheduleRepos:               getScheduleRepos,
 		updateScheduleRepos:            updateScheduleRepos,
 		updateScheduleToStatus100Repos: updateScheduleToStatus100Repos,
-		countParticipantsRepos:         countParticipantsRepos,
+		getParticipantsRepos:           getParticipantsRepos,
 		insertParticipantsRepos:        insertParticipantsRepos,
 		youtubeVideoListAPIRepos:       youtubeVideoListAPIRepos,
+		discordPostRepos:               discordPostRepos,
 		common:                         common,
 		durationParser:                 durationParser,
 		platformType:                   platformType,
 		streamingUrlPrefix:             streamingUrlPrefix,
 		partList:                       partList,
+		discordNortificationRange:      discordNortificationRange,
 	}
 }
 
@@ -235,12 +245,104 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 	return result, nil
 }
 
+func (intr NormalizationYoutubeDataInteractor) participantsIdNameFromDb(s sqlwrapper.IScan) (dbmodels.KeyValue[string, string], utility.IError) {
+	var id, name string
+	if err := s.Scan(&id, &name); err != nil {
+		return dbmodels.EmptyKeyValue[string, string](), utility.NewError(err.Error(), "")
+	}
+	return dbmodels.NewKeyValue(id, name), nil
+}
+
 func (intr NormalizationYoutubeDataInteractor) participantsCounter(s sqlwrapper.IScan) (int, utility.IError) {
 	var count int
 	if err := s.Scan(&count); err != nil {
 		return 0, utility.NewError(err.Error(), "")
 	}
 	return count, nil
+}
+
+func (intr NormalizationYoutubeDataInteractor) isParticipantsUpdate(data domain.FullScheduleData, participantsMap map[string]string) bool {
+	// すでにparticipantsテーブルに対象の配信の配信者idが登録されている
+	if _, ok := participantsMap[data.StreamerID]; ok {
+		return false
+	}
+
+	// streamerIDがない = DBのマスターテーブルに対象配信者のyoutubeIDが登録されていない = participantsに登録する必要がない(できない)
+	if data.StreamerID == "" {
+		return false
+	}
+
+	return true
+}
+
+// discord通知する条件
+// - 初めてYoutubeからデータ取得した対象であること
+//   - 元のステータスが10 or 20のものを初めて取得する対象と定義する
+//
+// - 動画の場合は以下に条件はなし。配信の場合は以下の条件を満たすこと
+//   - 配信の開始時間から指定時間以上経過していないこと(時間は設定ファイルで定義)
+func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeScheduleData domain.FullScheduleData, afterScheduleData domain.FullScheduleData) bool {
+	if beforeScheduleData.Status != "10" && beforeScheduleData.Status != "20" {
+		return false
+	}
+
+	// 動画
+	if afterScheduleData.Status == "0" {
+		return true
+	}
+
+	now, err := intr.common.Now()
+	if err != nil {
+		utility.LogError(err.WrapError())
+		return false
+	}
+
+	startDate, err := intr.common.CreateNewWrappedTimeFromUTC(afterScheduleData.PublishDatetime)
+	if err != nil {
+		utility.LogError(err.WrapError())
+		return false
+	}
+
+	deadLine := startDate.Add(0, 0, 0, 0, intr.discordNortificationRange, 0)
+
+	if now.After(deadLine) {
+		return false
+	}
+
+	utility.LogDebug(fmt.Sprintf("Discord nortification. { \"title\": \"%s\"}", afterScheduleData.Title))
+
+	return true
+}
+
+// discordへ投げるデータを作成する
+func (intr NormalizationYoutubeDataInteractor) CreateDiscordPostData(afterScheduleData domain.FullScheduleData, participantsMaps map[string]string) domain.DiscordWebhookParams {
+	var members []string
+	if afterScheduleData.StreamerID != "" {
+		members = append(members, afterScheduleData.StreamerName)
+	}
+
+	for k, v := range participantsMaps {
+		if afterScheduleData.StreamerID == k {
+			continue
+		}
+		members = append(members, v)
+	}
+
+	embedDescription := fmt.Sprintf("参加者: %s", strings.Join(members, "、"))
+
+	embed := domain.DiscordWebhookEmbed{
+		Title:       afterScheduleData.Title,
+		TimeStamp:   afterScheduleData.PublishDatetime,
+		Url:         afterScheduleData.Url,
+		Description: embedDescription,
+	}
+
+	content := fmt.Sprintf("%sの配信が追加されたよ", afterScheduleData.StreamerName)
+
+	return domain.DiscordWebhookParams{
+		Content: content,
+		Embeds:  []domain.DiscordWebhookEmbed{embed},
+	}
 }
 
 func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
@@ -294,12 +396,12 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 		}
 
 		if (data.Status == "2" || data.Status == "3") && data.Status == afterScheduleData.Status {
-			utility.LogInfo("data status not change. not update.")
 			// status 2 or 3 ... status not change that not update
+			utility.LogInfo(fmt.Sprintf("data status not change. not update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
 			continue
 		}
 
-		utility.LogInfo(fmt.Sprintf("schedule update. id = %s, streamer_name = %s, title = %s", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
+		utility.LogInfo(fmt.Sprintf("schedule update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
 		count, _, err := intr.updateScheduleRepos.UpdatePrepare(utility.ToInterfaceSlice(
 			afterScheduleData.Url,
 			afterScheduleData.StreamerName,
@@ -325,29 +427,49 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 			continue
 		}
 
-		if afterScheduleData.StreamerID == "" {
-			continue
-		}
+		// TODO: 元がstatus: 10 or 20だった場合はどっとライブのメンバーでなくてもparticipantsのデータを取得し、discordにpostする
+		//isNew := (data.Status == "10" || data.Status == "20") && afterScheduleData.Status != "100"
 
-		countList, err := intr.countParticipantsRepos.SelectPrepare(intr.participantsCounter, utility.ToInterfaceSlice(data.StreamingID, intr.platformType, afterScheduleData.StreamerID))
+		// TODO: 対象のstreaming_idでparticipantsのデータを全て取得するようにする
+		// participantsのデータはmapで保持する
+		// keyがparticipantsのid、valueがparticipantsのidをもとにマスターから取り出したname
+		// 主催者がどっとライブのメンバーでかつparticipantsに入っていなかった場合は、追加する
+
+		// isNew = trueの場合はdiscordにデータをpostする。その際にmapのvalueをリストにしてdescriptionの値にする
+
+		// participantsに配信者の情報が入っているかを確認し、なければ追加する
+
+		// participantsからデータを取得 取得したデータはparticipantsに以下の目的で使用する
+		// 1. participantsに対象配信者のデータを登録する必要があるか確認する
+		// 2. discordへの通知文章を作成する
+		participantsIdNames, err := intr.getParticipantsRepos.SelectPrepare(intr.participantsIdNameFromDb, utility.ToInterfaceSlice(data.StreamingID, intr.platformType))
 		if err != nil {
 			utility.LogError(err.WrapError())
 			continue
 		}
 
-		if len(countList) == 0 || countList[0] != 0 {
-			continue
+		participantsIdNameMap := dbmodels.KeyValueToMap(participantsIdNames)
+
+		if intr.isParticipantsUpdate(afterScheduleData, participantsIdNameMap) {
+			utility.LogInfo(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
+
+			count, _, err = intr.insertParticipantsRepos.UpdatePrepare(utility.ToInterfaceSlice(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now.ToUTCFormatString()))
+			if err != nil {
+				utility.LogError(err.WrapError())
+			} else if count == 0 {
+				utility.LogError(utility.NewError(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
+			}
+
 		}
 
-		utility.LogInfo(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
-		count, _, err = intr.insertParticipantsRepos.UpdatePrepare(utility.ToInterfaceSlice(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now.ToUTCFormatString()))
-		if err != nil {
-			utility.LogError(err.WrapError())
-			continue
-		}
+		// discordへの通知 discordへの通知対象であるかを判定し、通知対象ならば通知を行う
+		if intr.isDiscordNortification(data, afterScheduleData) {
+			// discordへの通知用データを作成する
+			discordPostData := intr.CreateDiscordPostData(afterScheduleData, participantsIdNameMap)
 
-		if count == 0 {
-			utility.LogError(utility.NewError(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
+			if err := intr.discordPostRepos.Post(discordPostData); err != nil {
+				utility.LogError(err.WrapError())
+			}
 		}
 
 	}

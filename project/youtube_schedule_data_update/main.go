@@ -5,11 +5,13 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/discordpost"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	infraYoutube "github.com/Siroyaka/dotschedule-backend_v2/infrastructure/youtubedataapi"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
@@ -19,10 +21,11 @@ const (
 	configPath  = "./config.json"
 	projectName = "YOUTUBE_SCHEDULE_DATA_UPDATE"
 
-	config_public = "PUBLIC"
-	config_sql    = "SQLITE"
-	config_parser = "PARSER"
-	config_query  = "QUERY"
+	config_public  = "PUBLIC"
+	config_sql     = "SQLITE"
+	config_parser  = "PARSER"
+	config_query   = "QUERY"
+	config_discord = "DISCORD"
 
 	config_sqlPath = "PATH"
 
@@ -43,8 +46,12 @@ const (
 	config_getStreamerMaster   = "GET_STREAMER_MASTER"
 	config_updateSchedule      = "UPDATE_SCHEDULE"
 	config_updateScheduleTo100 = "UPDATE_SCHEDULE_TO_STATUS100"
-	config_countParticipants   = "COUNT_PARTICIPANTS"
+	config_getParticipants     = "GET_PARTICIPANTS"
 	config_insertParticipants  = "INSERT_PARTICIPANTS"
+
+	// discord
+	config_discordUrl                = "NORTIFICATION_URL"
+	config_discordNortificationRange = "TARGET_TIME_RANGE"
 )
 
 func main() {
@@ -64,6 +71,7 @@ func main() {
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 	parserConfig := rootConfig.ReadChild(config_parser)
+	discordConfig := rootConfig.ReadChild(config_discord)
 
 	// import
 	common := utility.NewCommon(publicConfig)
@@ -73,6 +81,8 @@ func main() {
 	defer sqlHandler.Close()
 
 	youtubeDataAPI := infraYoutube.NewYoutubeDataAPI(rootConfig.Read(config_developerKey))
+
+	httpRequest := infrastructure.NewHTTPRequest()
 
 	// repository
 	youtubeVideoListRepos := youtubedataapi.NewVideoListRepository(youtubeDataAPI)
@@ -85,9 +95,11 @@ func main() {
 
 	updateScheduleTo100Repos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_updateScheduleTo100))
 
-	countParticipantsRepos := sqlwrapper.NewSelectRepository[int](sqlHandler, queryConfig.Read(config_countParticipants))
+	getParticipantsRepos := sqlwrapper.NewSelectRepository[dbmodels.KeyValue[string, string]](sqlHandler, queryConfig.Read(config_getParticipants))
 
 	insertParticipantsRepos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
+
+	discordPostRepos := discordpost.NewDiscordPostRepository(httpRequest, discordConfig.Read(config_discordUrl))
 
 	// interactor
 	intr := interactor.NewNormalizationYoutubeDataInteractor(
@@ -95,9 +107,10 @@ func main() {
 		getScheduleRepos,
 		updateScheduleRepos,
 		updateScheduleTo100Repos,
-		countParticipantsRepos,
+		getParticipantsRepos,
 		insertParticipantsRepos,
 		youtubeVideoListRepos,
+		discordPostRepos,
 		common,
 		utility.NewYoutubeDurationParser(
 			parserConfig.Read(config_parserHour),
@@ -107,6 +120,7 @@ func main() {
 		rootConfig.Read(config_platform),
 		rootConfig.Read(config_streamingUrlPrefic),
 		rootConfig.ReadStringList(config_partList),
+		discordConfig.ReadInteger(config_discordNortificationRange),
 	)
 
 	// controller
