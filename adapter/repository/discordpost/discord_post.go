@@ -24,11 +24,10 @@ func NewDiscordPostRepository(request abstruct.HTTPRequest, url string) DiscordP
 	}
 }
 
-func (repos DiscordPostRepository) Post(param domain.DiscordWebhookParams) utility.IError {
-
+func (repos DiscordPostRepository) Execute(param domain.DiscordWebhookParams) (string, utility.IError) {
 	content, err := param.ToJson()
 	if err != nil {
-		return err.WrapError()
+		return "Json Parse Error", err.WrapError()
 	}
 
 	postParam := discordPostParam{
@@ -41,12 +40,12 @@ func (repos DiscordPostRepository) Post(param domain.DiscordWebhookParams) utili
 
 	res, err := repos.request.Post(postParam)
 	if err != nil {
-		return err.WrapError()
+		return "Request Post Error", err.WrapError()
 	}
 
 	utility.LogDebug(fmt.Sprintf("Discord Post Status: %s, Response: %s", res.Status(), res.Body()))
 
-	return nil
+	return "", nil
 }
 
 type discordPostParam struct {

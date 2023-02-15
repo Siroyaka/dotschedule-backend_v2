@@ -6,6 +6,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/discordpost"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
@@ -97,7 +98,7 @@ func main() {
 
 	getParticipantsRepos := sqlwrapper.NewSelectRepository[dbmodels.KeyValue[string, string]](sqlHandler, queryConfig.Read(config_getParticipants))
 
-	insertParticipantsRepos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
+	insertParticipantsRepos := sqlrepository.NewSingleParticipantsInsertRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
 
 	discordPostRepos := discordpost.NewDiscordPostRepository(httpRequest, discordConfig.Read(config_discordUrl))
 

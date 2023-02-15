@@ -6,10 +6,12 @@ import (
 	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/discordpost"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/youtubedataapi"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
@@ -19,9 +21,9 @@ type NormalizationYoutubeDataInteractor struct {
 	updateScheduleRepos            sqlwrapper.UpdateRepository
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository
 	getParticipantsRepos           sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]]
-	insertParticipantsRepos        sqlwrapper.UpdateRepository
+	insertParticipantsRepos        abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse]
 	youtubeVideoListAPIRepos       youtubedataapi.VideoListRepository
-	discordPostRepos               discordpost.DiscordPostRepository
+	discordPostRepos               abstruct.RepositoryRequest[domain.DiscordWebhookParams, string]
 
 	common         utility.Common
 	durationParser utility.YoutubeDurationParser
@@ -37,9 +39,9 @@ func NewNormalizationYoutubeDataInteractor(
 	updateScheduleRepos sqlwrapper.UpdateRepository,
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository,
 	getParticipantsRepos sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]],
-	insertParticipantsRepos sqlwrapper.UpdateRepository,
+	insertParticipantsRepos abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse],
 	youtubeVideoListAPIRepos youtubedataapi.VideoListRepository,
-	discordPostRepos discordpost.DiscordPostRepository,
+	discordPostRepos abstruct.RepositoryRequest[domain.DiscordWebhookParams, string],
 	common utility.Common,
 	durationParser utility.YoutubeDurationParser,
 	platformType,
@@ -253,14 +255,6 @@ func (intr NormalizationYoutubeDataInteractor) participantsIdNameFromDb(s sqlwra
 	return dbmodels.NewKeyValue(id, name), nil
 }
 
-func (intr NormalizationYoutubeDataInteractor) participantsCounter(s sqlwrapper.IScan) (int, utility.IError) {
-	var count int
-	if err := s.Scan(&count); err != nil {
-		return 0, utility.NewError(err.Error(), "")
-	}
-	return count, nil
-}
-
 func (intr NormalizationYoutubeDataInteractor) isParticipantsUpdate(data domain.FullScheduleData, participantsMap map[string]string) bool {
 	// すでにparticipantsテーブルに対象の配信の配信者idが登録されている
 	if _, ok := participantsMap[data.StreamerID]; ok {
@@ -453,10 +447,11 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 		if intr.isParticipantsUpdate(afterScheduleData, participantsIdNameMap) {
 			utility.LogInfo(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
 
-			count, _, err = intr.insertParticipantsRepos.UpdatePrepare(utility.ToInterfaceSlice(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now.ToUTCFormatString()))
-			if err != nil {
+			participantsSingleInsertData := participants.NewSingleInsertData(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now)
+
+			if response, err := intr.insertParticipantsRepos.Execute(participantsSingleInsertData); err != nil {
 				utility.LogError(err.WrapError())
-			} else if count == 0 {
+			} else if response.Count == 0 {
 				utility.LogError(utility.NewError(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
 			}
 
@@ -467,8 +462,8 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 			// discordへの通知用データを作成する
 			discordPostData := intr.CreateDiscordPostData(afterScheduleData, participantsIdNameMap)
 
-			if err := intr.discordPostRepos.Post(discordPostData); err != nil {
-				utility.LogError(err.WrapError())
+			if message, err := intr.discordPostRepos.Execute(discordPostData); err != nil {
+				utility.LogError(err.WrapError(message))
 			}
 		}
 
