@@ -8,17 +8,17 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
-type SingleParticipantsInsertRepository struct {
+type InsertSingleParticipantsRepository struct {
 	updateWrapper sqlwrapper.UpdateWrapper
 }
 
-func NewSingleParticipantsInsertRepository(sqlHandler abstruct.SqlHandler, query string) SingleParticipantsInsertRepository {
-	return SingleParticipantsInsertRepository{
+func NewInsertSingleParticipantsRepository(sqlHandler abstruct.SqlHandler, query string) InsertSingleParticipantsRepository {
+	return InsertSingleParticipantsRepository{
 		updateWrapper: sqlwrapper.NewUpdateWrapper(sqlHandler, query),
 	}
 }
 
-func (repos SingleParticipantsInsertRepository) Execute(data participants.SingleInsertData) (reference.DBUpdateResponse, utility.IError) {
+func (repos InsertSingleParticipantsRepository) Execute(data participants.SingleInsertData) (reference.DBUpdateResponse, utility.IError) {
 	streamingId, platformType, streamerId, updateAt := data.Extract()
 	count, id, err := repos.updateWrapper.UpdatePrepare(streamingId, platformType, streamerId, updateAt.ToUTCFormatString())
 

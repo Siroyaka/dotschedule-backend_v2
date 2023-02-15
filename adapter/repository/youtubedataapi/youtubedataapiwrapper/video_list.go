@@ -1,18 +1,17 @@
-package youtubedataapi
+package youtubedataapiwrapper
 
 import (
 	abstructYoutube "github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
-type VideoListRepository struct {
+type VideoListWrapper struct {
 	api abstructYoutube.API
 }
 
-func NewVideoListRepository(api abstructYoutube.API) youtubedataapi.VideoListRepository {
-	return VideoListRepository{
+func NewVideoListWrapper(api abstructYoutube.API) VideoListWrapper {
+	return VideoListWrapper{
 		api: api,
 	}
 }
@@ -53,7 +52,7 @@ func convertContentDetails(contentDetails abstructYoutube.ContentDetails) domain
 	)
 }
 
-func (repos VideoListRepository) IdSearch(part, idList []string) ([]domain.YoutubeVideoData, utility.IError) {
+func (repos VideoListWrapper) IdSearch(part, idList []string) ([]domain.YoutubeVideoData, utility.IError) {
 	var resList []domain.YoutubeVideoData
 	if len(part) == 0 || len(idList) == 0 {
 		return resList, nil

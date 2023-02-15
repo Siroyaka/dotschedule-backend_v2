@@ -9,7 +9,6 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/sqlwrapper"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
@@ -20,16 +19,18 @@ type NormalizationYoutubeDataInteractor struct {
 	getScheduleRepos               sqlwrapper.SelectRepository[domain.FullScheduleData]
 	updateScheduleRepos            sqlwrapper.UpdateRepository
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository
-	getParticipantsRepos           sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]]
-	insertParticipantsRepos        abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse]
-	youtubeVideoListAPIRepos       youtubedataapi.VideoListRepository
-	discordPostRepos               abstruct.RepositoryRequest[domain.DiscordWebhookParams, string]
+
+	youtubeVideoListAPIRepos abstruct.RepositoryRequest[string, domain.YoutubeVideoData]
+
+	getParticipantsRepos    abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, []dbmodels.KeyValue[string, string]]
+	insertParticipantsRepos abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse]
+
+	discordPostRepos abstruct.RepositoryRequest[domain.DiscordWebhookParams, string]
 
 	common         utility.Common
 	durationParser utility.YoutubeDurationParser
 	platformType,
 	streamingUrlPrefix string
-	partList                  []string
 	discordNortificationRange int
 }
 
@@ -38,15 +39,14 @@ func NewNormalizationYoutubeDataInteractor(
 	getScheduleRepos sqlwrapper.SelectRepository[domain.FullScheduleData],
 	updateScheduleRepos sqlwrapper.UpdateRepository,
 	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository,
-	getParticipantsRepos sqlwrapper.SelectRepository[dbmodels.KeyValue[string, string]],
+	getParticipantsRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, []dbmodels.KeyValue[string, string]],
 	insertParticipantsRepos abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse],
-	youtubeVideoListAPIRepos youtubedataapi.VideoListRepository,
+	youtubeVideoListAPIRepos abstruct.RepositoryRequest[string, domain.YoutubeVideoData],
 	discordPostRepos abstruct.RepositoryRequest[domain.DiscordWebhookParams, string],
 	common utility.Common,
 	durationParser utility.YoutubeDurationParser,
 	platformType,
 	streamingUrlPrefix string,
-	partList []string,
 	discordNortificationRange int,
 ) NormalizationYoutubeDataInteractor {
 	return NormalizationYoutubeDataInteractor{
@@ -62,7 +62,6 @@ func NewNormalizationYoutubeDataInteractor(
 		durationParser:                 durationParser,
 		platformType:                   platformType,
 		streamingUrlPrefix:             streamingUrlPrefix,
-		partList:                       partList,
 		discordNortificationRange:      discordNortificationRange,
 	}
 }
@@ -247,14 +246,6 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 	return result, nil
 }
 
-func (intr NormalizationYoutubeDataInteractor) participantsIdNameFromDb(s sqlwrapper.IScan) (dbmodels.KeyValue[string, string], utility.IError) {
-	var id, name string
-	if err := s.Scan(&id, &name); err != nil {
-		return dbmodels.EmptyKeyValue[string, string](), utility.NewError(err.Error(), "")
-	}
-	return dbmodels.NewKeyValue(id, name), nil
-}
-
 func (intr NormalizationYoutubeDataInteractor) isParticipantsUpdate(data domain.FullScheduleData, participantsMap map[string]string) bool {
 	// すでにparticipantsテーブルに対象の配信の配信者idが登録されている
 	if _, ok := participantsMap[data.StreamerID]; ok {
@@ -361,17 +352,11 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 		}
 
 		utility.LogInfo(fmt.Sprintf("target id = %s", data.StreamingID))
-		targetStreamingID := data.StreamingID
 
-		apiData, err := intr.youtubeVideoListAPIRepos.IdSearch(intr.partList, []string{targetStreamingID})
+		youtubeVideoData, err := intr.youtubeVideoListAPIRepos.Execute(data.StreamingID)
 		if err != nil {
 			utility.LogError(err.WrapError())
 			continue
-		}
-
-		youtubeVideoData := domain.NewEmptyYoutubeVideoData()
-		if len(apiData) != 0 {
-			youtubeVideoData = apiData[0]
 		}
 
 		if youtubeVideoData.IsEmpty() {
@@ -421,22 +406,9 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 			continue
 		}
 
-		// TODO: 元がstatus: 10 or 20だった場合はどっとライブのメンバーでなくてもparticipantsのデータを取得し、discordにpostする
-		//isNew := (data.Status == "10" || data.Status == "20") && afterScheduleData.Status != "100"
+		streamingIdWithPlatformType := reference.NewStreamingIDWithPlatformType(data.StreamingID, intr.platformType)
 
-		// TODO: 対象のstreaming_idでparticipantsのデータを全て取得するようにする
-		// participantsのデータはmapで保持する
-		// keyがparticipantsのid、valueがparticipantsのidをもとにマスターから取り出したname
-		// 主催者がどっとライブのメンバーでかつparticipantsに入っていなかった場合は、追加する
-
-		// isNew = trueの場合はdiscordにデータをpostする。その際にmapのvalueをリストにしてdescriptionの値にする
-
-		// participantsに配信者の情報が入っているかを確認し、なければ追加する
-
-		// participantsからデータを取得 取得したデータはparticipantsに以下の目的で使用する
-		// 1. participantsに対象配信者のデータを登録する必要があるか確認する
-		// 2. discordへの通知文章を作成する
-		participantsIdNames, err := intr.getParticipantsRepos.SelectPrepare(intr.participantsIdNameFromDb, utility.ToInterfaceSlice(data.StreamingID, intr.platformType))
+		participantsIdNames, err := intr.getParticipantsRepos.Execute(streamingIdWithPlatformType)
 		if err != nil {
 			utility.LogError(err.WrapError())
 			continue

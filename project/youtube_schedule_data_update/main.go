@@ -12,7 +12,6 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	infraYoutube "github.com/Siroyaka/dotschedule-backend_v2/infrastructure/youtubedataapi"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
@@ -86,7 +85,8 @@ func main() {
 	httpRequest := infrastructure.NewHTTPRequest()
 
 	// repository
-	youtubeVideoListRepos := youtubedataapi.NewVideoListRepository(youtubeDataAPI)
+	//youtubeVideoListRepos := youtubedataapi.NewVideoListRepository(youtubeDataAPI)
+	youtubeVideoListRepos := youtubedataapi.NewGetSingleVideoDataRepository(youtubeDataAPI, rootConfig.ReadStringList(config_partList))
 
 	getScheduleRepos := sqlwrapper.NewSelectRepository[domain.FullScheduleData](sqlHandler, queryConfig.Read(config_getSchedule))
 
@@ -96,9 +96,9 @@ func main() {
 
 	updateScheduleTo100Repos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_updateScheduleTo100))
 
-	getParticipantsRepos := sqlwrapper.NewSelectRepository[dbmodels.KeyValue[string, string]](sqlHandler, queryConfig.Read(config_getParticipants))
+	getParticipantsRepos := sqlrepository.NewSelectAScheduleParticipants(sqlHandler, queryConfig.Read(config_getParticipants))
 
-	insertParticipantsRepos := sqlrepository.NewSingleParticipantsInsertRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
+	insertParticipantsRepos := sqlrepository.NewInsertSingleParticipantsRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
 
 	discordPostRepos := discordpost.NewDiscordPostRepository(httpRequest, discordConfig.Read(config_discordUrl))
 
@@ -120,7 +120,6 @@ func main() {
 		),
 		rootConfig.Read(config_platform),
 		rootConfig.Read(config_streamingUrlPrefic),
-		rootConfig.ReadStringList(config_partList),
 		discordConfig.ReadInteger(config_discordNortificationRange),
 	)
 

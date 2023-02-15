@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
@@ -13,6 +12,12 @@ type SelectWrapper[X any] struct {
 	query      string
 }
 
+type IScan interface {
+	Scan(...interface{}) error
+}
+
+type Scanable[X any] func(IScan) (X, utility.IError)
+
 func NewSelectWrapper[X any](sqlHandler abstruct.SqlHandler, query string) SelectWrapper[X] {
 	return SelectWrapper[X]{
 		sqlHandler: sqlHandler,
@@ -20,7 +25,7 @@ func NewSelectWrapper[X any](sqlHandler abstruct.SqlHandler, query string) Selec
 	}
 }
 
-func (repos SelectWrapper[X]) Select(scanable sqlwrapper.Scanable[X]) ([]X, utility.IError) {
+func (repos SelectWrapper[X]) Select(scanable Scanable[X]) ([]X, utility.IError) {
 	rows, err := repos.sqlHandler.Query(repos.query)
 	if err != nil {
 		return []X{}, utility.NewError(err.Error(), utility.ERR_SQL_QUERY, repos.query)
@@ -44,7 +49,7 @@ func (repos SelectWrapper[X]) Select(scanable sqlwrapper.Scanable[X]) ([]X, util
 	return result, nil
 }
 
-func (repos SelectWrapper[X]) SelectPrepare(scanable sqlwrapper.Scanable[X], data ...interface{}) ([]X, utility.IError) {
+func (repos SelectWrapper[X]) SelectPrepare(scanable Scanable[X], data ...interface{}) ([]X, utility.IError) {
 	sqmt, err := repos.sqlHandler.Prepare(repos.query)
 	if err != nil {
 		return []X{}, utility.NewError(err.Error(), utility.ERR_SQL_PREPARE, repos.query)
