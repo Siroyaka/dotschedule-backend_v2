@@ -288,9 +288,6 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 				continue
 			}
 			utility.LogInfo(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
-			//if err := intr.updateStatusTo100(data); err != nil {
-			//utility.LogError(err.WrapError())
-			//}
 			continue
 		}
 
