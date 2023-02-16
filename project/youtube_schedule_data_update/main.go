@@ -88,7 +88,6 @@ func main() {
 	// repository
 	youtubeVideoListRepos := youtubedataapi.NewGetSingleVideoDataRepository(youtubeDataAPI, rootConfig.ReadStringList(config_partList))
 
-	//getScheduleRepos := sqlwrapper.NewSelectRepository[domain.FullScheduleData](sqlHandler, queryConfig.Read(config_getSchedule))
 	getScheduleRepos := sqlrepository.NewSelectNormalizeSchedulesRepository(sqlHandler, queryConfig.Read(config_getSchedule))
 
 	getStreamerMasterRepos := sqlrepository.NewSelectStreamerMasterWithPlatformMasterRepository(sqlHandler, queryConfig.Read(config_getStreamerMaster))
