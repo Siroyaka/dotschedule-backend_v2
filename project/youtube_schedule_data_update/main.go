@@ -91,13 +91,13 @@ func main() {
 	//getScheduleRepos := sqlwrapper.NewSelectRepository[domain.FullScheduleData](sqlHandler, queryConfig.Read(config_getSchedule))
 	getScheduleRepos := sqlrepository.NewSelectNormalizeSchedulesRepository(sqlHandler, queryConfig.Read(config_getSchedule))
 
-	getStreamerMasterRepos := sqlrepository.NewSelectStreamerMasterWithPlatformMaster(sqlHandler, queryConfig.Read(config_getStreamerMaster))
+	getStreamerMasterRepos := sqlrepository.NewSelectStreamerMasterWithPlatformMasterRepository(sqlHandler, queryConfig.Read(config_getStreamerMaster))
 
 	updateScheduleRepos := sqlrepository.NewUpdateScheduleRepository(sqlHandler, queryConfig.Read(config_updateSchedule))
 
 	updateScheduleTo100Repos := sqlrepository.NewUpdateScheduleStatusTo100Repository(sqlHandler, queryConfig.Read(config_updateScheduleTo100))
 
-	getParticipantsRepos := sqlrepository.NewSelectAScheduleParticipants(sqlHandler, queryConfig.Read(config_getParticipants))
+	getParticipantsRepos := sqlrepository.NewSelectAScheduleParticipantsRepository(sqlHandler, queryConfig.Read(config_getParticipants))
 
 	insertParticipantsRepos := sqlrepository.NewInsertSingleParticipantsRepository(sqlHandler, queryConfig.Read(config_insertParticipants))
 

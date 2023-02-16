@@ -12,7 +12,7 @@ type SelectAScheduleParticipantsRepository struct {
 	selectWrapper sqlwrapper.SelectWrapper[dbmodels.KeyValue[string, string]]
 }
 
-func NewSelectAScheduleParticipants(sqlHandler abstruct.SqlHandler, query string) SelectAScheduleParticipantsRepository {
+func NewSelectAScheduleParticipantsRepository(sqlHandler abstruct.SqlHandler, query string) SelectAScheduleParticipantsRepository {
 	return SelectAScheduleParticipantsRepository{
 		selectWrapper: sqlwrapper.NewSelectWrapper[dbmodels.KeyValue[string, string]](sqlHandler, query),
 	}

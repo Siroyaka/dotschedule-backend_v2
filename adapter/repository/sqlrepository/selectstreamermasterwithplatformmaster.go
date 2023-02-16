@@ -7,17 +7,17 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
-type SelectStreamerMasterWithPlatformMaster struct {
+type SelectStreamerMasterWithPlatformMasterRepository struct {
 	selectWrapper sqlwrapper.SelectWrapper[domain.StreamerMasterWithPlatformData]
 }
 
-func NewSelectStreamerMasterWithPlatformMaster(sqlHandler abstruct.SqlHandler, query string) SelectStreamerMasterWithPlatformMaster {
-	return SelectStreamerMasterWithPlatformMaster{
+func NewSelectStreamerMasterWithPlatformMasterRepository(sqlHandler abstruct.SqlHandler, query string) SelectStreamerMasterWithPlatformMasterRepository {
+	return SelectStreamerMasterWithPlatformMasterRepository{
 		selectWrapper: sqlwrapper.NewSelectWrapper[domain.StreamerMasterWithPlatformData](sqlHandler, query),
 	}
 }
 
-func (repos SelectStreamerMasterWithPlatformMaster) makeScan(platformType string) func(sqlwrapper.IScan) (domain.StreamerMasterWithPlatformData, utility.IError) {
+func (repos SelectStreamerMasterWithPlatformMasterRepository) makeScan(platformType string) func(sqlwrapper.IScan) (domain.StreamerMasterWithPlatformData, utility.IError) {
 	f := func(s sqlwrapper.IScan) (domain.StreamerMasterWithPlatformData, utility.IError) {
 		var streamer_id, platform_id, streamer_name string
 
@@ -37,7 +37,7 @@ func (repos SelectStreamerMasterWithPlatformMaster) makeScan(platformType string
 	return f
 }
 
-func (repos SelectStreamerMasterWithPlatformMaster) Execute(platformType string) ([]domain.StreamerMasterWithPlatformData, utility.IError) {
+func (repos SelectStreamerMasterWithPlatformMasterRepository) Execute(platformType string) ([]domain.StreamerMasterWithPlatformData, utility.IError) {
 	result, err := repos.selectWrapper.SelectPrepare(repos.makeScan(platformType), platformType)
 	if err != nil {
 		return result, err.WrapError()
