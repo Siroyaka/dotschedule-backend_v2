@@ -7,14 +7,13 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/discordpost"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/youtubedataapi"
-	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	infraYoutube "github.com/Siroyaka/dotschedule-backend_v2/infrastructure/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 const (
@@ -66,6 +65,8 @@ func main() {
 
 	utility.LoggerStart()
 
+	wrappedbasics.InitializeWrappedTimeProps()
+
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
@@ -85,16 +86,16 @@ func main() {
 	httpRequest := infrastructure.NewHTTPRequest()
 
 	// repository
-	//youtubeVideoListRepos := youtubedataapi.NewVideoListRepository(youtubeDataAPI)
 	youtubeVideoListRepos := youtubedataapi.NewGetSingleVideoDataRepository(youtubeDataAPI, rootConfig.ReadStringList(config_partList))
 
-	getScheduleRepos := sqlwrapper.NewSelectRepository[domain.FullScheduleData](sqlHandler, queryConfig.Read(config_getSchedule))
+	//getScheduleRepos := sqlwrapper.NewSelectRepository[domain.FullScheduleData](sqlHandler, queryConfig.Read(config_getSchedule))
+	getScheduleRepos := sqlrepository.NewSelectNormalizeSchedulesRepository(sqlHandler, queryConfig.Read(config_getSchedule))
 
-	getStreamerMasterRepos := sqlwrapper.NewSelectRepository[domain.StreamerMasterWithPlatformData](sqlHandler, queryConfig.Read(config_getStreamerMaster))
+	getStreamerMasterRepos := sqlrepository.NewSelectStreamerMasterWithPlatformMaster(sqlHandler, queryConfig.Read(config_getStreamerMaster))
 
-	updateScheduleRepos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_updateSchedule))
+	updateScheduleRepos := sqlrepository.NewUpdateScheduleRepository(sqlHandler, queryConfig.Read(config_updateSchedule))
 
-	updateScheduleTo100Repos := sqlwrapper.NewUpdateRepository(sqlHandler, queryConfig.Read(config_updateScheduleTo100))
+	updateScheduleTo100Repos := sqlrepository.NewUpdateScheduleStatusTo100Repository(sqlHandler, queryConfig.Read(config_updateScheduleTo100))
 
 	getParticipantsRepos := sqlrepository.NewSelectAScheduleParticipants(sqlHandler, queryConfig.Read(config_getParticipants))
 

@@ -1,24 +1,23 @@
 package interactor
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/dbmodels"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
 type NormalizationYoutubeDataInteractor struct {
-	getStreamerMasterRepos         sqlwrapper.SelectRepository[domain.StreamerMasterWithPlatformData]
-	getScheduleRepos               sqlwrapper.SelectRepository[domain.FullScheduleData]
-	updateScheduleRepos            sqlwrapper.UpdateRepository
-	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository
+	getStreamerMasterRepos abstruct.RepositoryRequest[string, []domain.StreamerMasterWithPlatformData]
+	getScheduleRepos       abstruct.RepositoryRequest[reference.VoidStruct, []domain.FullScheduleData]
+
+	updateScheduleRepos            abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
+	updateScheduleToStatus100Repos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 
 	youtubeVideoListAPIRepos abstruct.RepositoryRequest[string, domain.YoutubeVideoData]
 
@@ -35,10 +34,11 @@ type NormalizationYoutubeDataInteractor struct {
 }
 
 func NewNormalizationYoutubeDataInteractor(
-	getStreamerMasterRepos sqlwrapper.SelectRepository[domain.StreamerMasterWithPlatformData],
-	getScheduleRepos sqlwrapper.SelectRepository[domain.FullScheduleData],
-	updateScheduleRepos sqlwrapper.UpdateRepository,
-	updateScheduleToStatus100Repos sqlwrapper.UpdateRepository,
+	getStreamerMasterRepos abstruct.RepositoryRequest[string, []domain.StreamerMasterWithPlatformData],
+	getScheduleRepos abstruct.RepositoryRequest[reference.VoidStruct, []domain.FullScheduleData],
+
+	updateScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
+	updateScheduleToStatus100Repos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 	getParticipantsRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, []dbmodels.KeyValue[string, string]],
 	insertParticipantsRepos abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse],
 	youtubeVideoListAPIRepos abstruct.RepositoryRequest[string, domain.YoutubeVideoData],
@@ -66,24 +66,6 @@ func NewNormalizationYoutubeDataInteractor(
 	}
 }
 
-func (intr NormalizationYoutubeDataInteractor) streamerMasterScan(s sqlwrapper.IScan) (domain.StreamerMasterWithPlatformData, utility.IError) {
-	var streamer_id, platform_id, streamer_name string
-
-	if err := s.Scan(&streamer_id, &platform_id, &streamer_name); err != nil {
-		return domain.NewStreamerMasterWithPlatformData(""), utility.NewError(err.Error(), "")
-	}
-
-	res := domain.NewStreamerMasterWithPlatformData(streamer_id)
-	res.StreamerName = streamer_name
-	res.PlatformData[intr.platformType] = domain.StreamerPlatformMaster{
-		StreamerID:   streamer_id,
-		PlatformID:   platform_id,
-		PlatformType: intr.platformType,
-	}
-
-	return res, nil
-}
-
 func (intr NormalizationYoutubeDataInteractor) createStreamerDataMap(list []domain.StreamerMasterWithPlatformData) map[string]domain.StreamerMaster {
 	res := make(map[string]domain.StreamerMaster)
 	for _, data := range list {
@@ -95,73 +77,6 @@ func (intr NormalizationYoutubeDataInteractor) createStreamerDataMap(list []doma
 		res[v.PlatformID] = data.StreamerMaster
 	}
 	return res
-}
-
-func (intr NormalizationYoutubeDataInteractor) scheduleScan(s sqlwrapper.IScan) (domain.FullScheduleData, utility.IError) {
-	var streaming_id, status string
-	var publish_datetime sql.NullString
-
-	if err := s.Scan(&streaming_id, &status, &publish_datetime); err != nil {
-		return domain.NewEmptyFullScheduleData("", intr.platformType), utility.NewError(err.Error(), "")
-	}
-
-	res := domain.NewEmptyFullScheduleData(streaming_id, intr.platformType)
-	res.Status = status
-	if !publish_datetime.Valid {
-		res.PublishDatetime = publish_datetime.String
-	}
-
-	return res, nil
-}
-
-func (intr *NormalizationYoutubeDataInteractor) status100Data(schedule domain.FullScheduleData) ([]interface{}, utility.IError) {
-	now, err := intr.common.Now()
-	if err != nil {
-		return utility.ToInterfaceSlice(), err.WrapError("create 'now' error")
-	}
-
-	afterStatus := 100
-	isViewing := 0
-	isComplete := 0
-
-	if schedule.PublishDatetime != "" {
-		beforePublishDatetime, err := intr.common.CreateNewWrappedTimeFromUTC(schedule.PublishDatetime)
-
-		if err != nil {
-			return utility.ToInterfaceSlice(), err.WrapError("publishDateTime parse error")
-		}
-
-		if beforePublishDatetime.Before(now.Add(0, 0, -14, 0, 0, 0)) {
-			// target schedule data is complete
-			isComplete = 1
-		}
-	}
-
-	result := utility.ToInterfaceSlice(
-		now.ToUTCFormatString(),
-		afterStatus,
-		isViewing,
-		isComplete,
-		schedule.StreamingID,
-		intr.platformType,
-	)
-
-	return result, nil
-}
-
-func (intr *NormalizationYoutubeDataInteractor) updateStatusTo100(data domain.FullScheduleData) utility.IError {
-	queryValues, err := intr.status100Data(data)
-	if err != nil {
-		return err.WrapError("status update to 100 failed")
-	}
-	count, _, err := intr.updateScheduleToStatus100Repos.UpdatePrepare(queryValues)
-	if err != nil {
-		return err.WrapError("status update to 100 failed")
-	}
-	if count == 0 {
-		return utility.NewError("status update to 100 failed", "")
-	}
-	return nil
 }
 
 func (intr NormalizationYoutubeDataInteractor) makeStatus(videoData domain.YoutubeVideoData) (string, utility.IError) {
@@ -260,11 +175,14 @@ func (intr NormalizationYoutubeDataInteractor) isParticipantsUpdate(data domain.
 	return true
 }
 
-// discord通知する条件
-// - 初めてYoutubeからデータ取得した対象であること
+// # discord通知する条件
+//
+//   - 初めてYoutubeからデータ取得した対象であること
+//
 //   - 元のステータスが10 or 20のものを初めて取得する対象と定義する
 //
-// - 動画の場合は以下に条件はなし。配信の場合は以下の条件を満たすこと
+//   - 動画の場合は以下に条件はなし。配信の場合は以下の条件を満たすこと
+//
 //   - 配信の開始時間から指定時間以上経過していないこと(時間は設定ファイルで定義)
 func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeScheduleData domain.FullScheduleData, afterScheduleData domain.FullScheduleData) bool {
 	if beforeScheduleData.Status != "10" && beforeScheduleData.Status != "20" {
@@ -331,7 +249,7 @@ func (intr NormalizationYoutubeDataInteractor) CreateDiscordPostData(afterSchedu
 }
 
 func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
-	streamerMasterSeedData, err := intr.getStreamerMasterRepos.Select(intr.streamerMasterScan)
+	streamerMasterSeedData, err := intr.getStreamerMasterRepos.Execute(intr.platformType)
 	if err != nil {
 		return err.WrapError()
 	}
@@ -339,7 +257,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 	// Need to make streamer data from youtube channel id. Create map data for that
 	streamerMasterMap := intr.createStreamerDataMap(streamerMasterSeedData)
 
-	targetSchedules, err := intr.getScheduleRepos.Select(intr.scheduleScan)
+	targetSchedules, err := intr.getScheduleRepos.Execute(reference.Void())
 	if err != nil {
 		return err.WrapError()
 	}
@@ -360,10 +278,19 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 		}
 
 		if youtubeVideoData.IsEmpty() {
-			utility.LogInfo("data is notfound from youtube data api. status to 100.")
-			if err := intr.updateStatusTo100(data); err != nil {
-				utility.LogError(err.WrapError())
+			utility.LogInfo(fmt.Sprintf("notfound from youtube data api. change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+
+			if updateResult, err := intr.updateScheduleToStatus100Repos.Execute(data); err != nil {
+				utility.LogError(err.WrapError(fmt.Sprintf("{\"StreamingID\": \"%s\"}", data.StreamingID)))
+				continue
+			} else if updateResult.Count == 0 {
+				utility.LogError(utility.NewError(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
+				continue
 			}
+			utility.LogInfo(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+			//if err := intr.updateStatusTo100(data); err != nil {
+			//utility.LogError(err.WrapError())
+			//}
 			continue
 		}
 
@@ -381,27 +308,13 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 		}
 
 		utility.LogInfo(fmt.Sprintf("schedule update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
-		count, _, err := intr.updateScheduleRepos.UpdatePrepare(utility.ToInterfaceSlice(
-			afterScheduleData.Url,
-			afterScheduleData.StreamerName,
-			afterScheduleData.StreamerID,
-			afterScheduleData.Title,
-			afterScheduleData.Description,
-			afterScheduleData.Status,
-			afterScheduleData.PublishDatetime,
-			afterScheduleData.Duration,
-			afterScheduleData.ThumbnailLink,
-			afterScheduleData.UpdateAt,
-			afterScheduleData.IsViewing,
-			afterScheduleData.IsCompleteData,
-			data.StreamingID,
-			intr.platformType,
-		))
+
+		updateResult, err := intr.updateScheduleRepos.Execute(afterScheduleData)
 		if err != nil {
 			utility.LogError(err.WrapError())
 			continue
 		}
-		if count == 0 {
+		if updateResult.Count == 0 {
 			utility.LogError(utility.NewError(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
 			continue
 		}
