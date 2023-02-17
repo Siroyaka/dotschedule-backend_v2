@@ -17,7 +17,15 @@ func NewUpdateWrapper(sqlHandler abstruct.SqlHandler, query string) UpdateWrappe
 	}
 }
 
+func (repos *UpdateWrapper) SetQuery(query string) {
+	repos.query = query
+}
+
 func (repos UpdateWrapper) Update() (int64, int64, utility.IError) {
+	if repos.query == "" {
+		return 0, 0, utility.NewError("query is empty", "")
+	}
+
 	result, err := repos.sqlHandler.Exec(repos.query)
 	if err != nil {
 		return 0, 0, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
@@ -37,6 +45,10 @@ func (repos UpdateWrapper) Update() (int64, int64, utility.IError) {
 }
 
 func (repos UpdateWrapper) UpdatePrepare(values ...interface{}) (int64, int64, utility.IError) {
+	if repos.query == "" {
+		return 0, 0, utility.NewError("query is empty", "")
+	}
+
 	sqmt, err := repos.sqlHandler.Prepare(repos.query)
 	if err != nil {
 		return 0, 0, utility.NewError(err.Error(), utility.ERR_SQL_PREPARE, repos.query)

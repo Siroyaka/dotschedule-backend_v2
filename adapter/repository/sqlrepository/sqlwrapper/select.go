@@ -25,7 +25,15 @@ func NewSelectWrapper[X any](sqlHandler abstruct.SqlHandler, query string) Selec
 	}
 }
 
+func (repos *SelectWrapper[X]) SetQuery(query string) {
+	repos.query = query
+}
+
 func (repos SelectWrapper[X]) Select(scanable Scanable[X]) ([]X, utility.IError) {
+	if repos.query == "" {
+		return []X{}, utility.NewError("query is empty.", "")
+	}
+
 	rows, err := repos.sqlHandler.Query(repos.query)
 	if err != nil {
 		return []X{}, utility.NewError(err.Error(), utility.ERR_SQL_QUERY, repos.query)
@@ -50,6 +58,10 @@ func (repos SelectWrapper[X]) Select(scanable Scanable[X]) ([]X, utility.IError)
 }
 
 func (repos SelectWrapper[X]) SelectPrepare(scanable Scanable[X], data ...interface{}) ([]X, utility.IError) {
+	if repos.query == "" {
+		return []X{}, utility.NewError("query is empty.", "")
+	}
+
 	sqmt, err := repos.sqlHandler.Prepare(repos.query)
 	if err != nil {
 		return []X{}, utility.NewError(err.Error(), utility.ERR_SQL_PREPARE, repos.query)
