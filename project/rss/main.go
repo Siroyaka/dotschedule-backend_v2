@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/httprequest"
 	rssschedule "github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/rss/schedule"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlrss"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
@@ -85,9 +86,8 @@ func main() {
 
 	requestRepos := httprequest.NewRSSRequestRepository(httpRequestHandler)
 
-	getScheduleRepos := rssschedule.NewGetRepository(
+	getScheduleRepos := sqlrepository.NewSelectIDsFromIDsRepository(
 		sqlHandler,
-		common,
 		queryConfig.Read(config_getSchedule),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),

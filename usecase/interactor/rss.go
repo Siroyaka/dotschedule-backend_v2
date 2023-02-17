@@ -24,7 +24,7 @@ type RSSInteractor struct {
 
 	requestRepository abstruct.RepositoryRequest[string, utility.IFeed]
 
-	getScheduleRepository    rssschedule.GetRepository
+	getScheduleIDRepository  abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]]
 	insertScheduleRepository rssschedule.InsertRepository
 	updateScheduleRepository rssschedule.UpdateRepository
 
@@ -40,7 +40,8 @@ func NewRSSInteractor(
 
 	requestRepository abstruct.RepositoryRequest[string, utility.IFeed],
 
-	getScheduleRepository rssschedule.GetRepository,
+	getScheduleIDRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]],
+
 	insertScheduleRepository rssschedule.InsertRepository,
 	updateScheduleRepository rssschedule.UpdateRepository,
 
@@ -54,7 +55,7 @@ func NewRSSInteractor(
 		getMasterRepository:      getMasterRepository,
 		updateMasterRepository:   updateMasterRepository,
 		requestRepository:        requestRepository,
-		getScheduleRepository:    getScheduleRepository,
+		getScheduleIDRepository:  getScheduleIDRepository,
 		insertScheduleRepository: insertScheduleRepository,
 		updateScheduleRepository: updateScheduleRepository,
 		completeStatus:           completeStatus,
@@ -140,10 +141,6 @@ func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utility.IError) {
 	return list, nil
 }
 
-func (intr RSSInteractor) scheduleIsCompleteConverter(id string, iscomplete int) (string, bool) {
-	return id, iscomplete == intr.completeStatus
-}
-
 func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt wrappedbasics.WrappedTime, ierr utility.IError) {
 	var idList []string
 	isError = false
@@ -155,12 +152,13 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 		idList = append(idList, seedSchedule.GetID())
 	}
 
-	withIsComplete, err := intr.getScheduleRepository.Get(idList, intr.platform, intr.scheduleIsCompleteConverter)
+	alreadyInsertedIdList, err := intr.getScheduleIDRepository.Execute(reference.NewStreamingIDListWithPlatformID(idList, intr.platform))
 	if err != nil {
 		ierr = err.WrapError()
 		isError = true
 		return
 	}
+
 	var updateList []string
 
 	for _, seedSchedule := range list {
@@ -168,12 +166,8 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 			newestPublishedAt = seedSchedule.GetPublishedAt()
 		}
 
-		if withIsComplete.Has(seedSchedule.GetID()) {
-
-			// dbにあるデータがcomplete状態であれば更新する、そうでなければ更新もしない
-			if withIsComplete.IsComplete(seedSchedule.GetID()) {
-				updateList = append(updateList, seedSchedule.GetID())
-			}
+		if alreadyInsertedIdList.Has(seedSchedule.GetID()) {
+			updateList = append(updateList, seedSchedule.GetID())
 			continue
 		}
 
