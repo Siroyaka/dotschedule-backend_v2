@@ -7,7 +7,6 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
-	rssschedule "github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/rss/schedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -22,11 +21,9 @@ type RSSInteractor struct {
 
 	requestRepository abstruct.RepositoryRequest[string, utility.IFeed]
 
-	getScheduleIDRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]]
-	//insertScheduleRepository rssschedule.InsertRepository
+	getScheduleIDRepository  abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]]
 	insertScheduleRepository abstruct.RepositoryRequest[domain.SeedSchedule, reference.DBUpdateResponse]
-
-	updateScheduleRepository rssschedule.UpdateRepository
+	updateScheduleRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, reference.DBUpdateResponse]
 
 	completeStatus, notCompleteStatus                       int
 	platform, insertStatus, videoIdElement, videoIdItemName string
@@ -39,11 +36,8 @@ func NewRSSInteractor(
 	requestRepository abstruct.RepositoryRequest[string, utility.IFeed],
 
 	getScheduleIDRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]],
-
-	//insertScheduleRepository rssschedule.InsertRepository,
 	insertScheduleRepository abstruct.RepositoryRequest[domain.SeedSchedule, reference.DBUpdateResponse],
-
-	updateScheduleRepository rssschedule.UpdateRepository,
+	updateScheduleRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, reference.DBUpdateResponse],
 
 	completeStatus, notCompleteStatus int,
 	platform, insertStatus, videoIdElement, videoIdItemName string,
@@ -183,7 +177,11 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 		insertCount++
 	}
 
-	if err = intr.updateScheduleRepository.Update(updateList, intr.platform, intr.notCompleteStatus); err != nil {
+	if result, err := intr.updateScheduleRepository.Execute(reference.NewStreamingIDListWithPlatformID(updateList, intr.platform)); err != nil {
+		ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+		isError = true
+		return
+	} else if result.Count == 0 {
 		ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
 		isError = true
 		return
