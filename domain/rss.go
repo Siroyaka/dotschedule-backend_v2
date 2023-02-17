@@ -1,15 +1,17 @@
 package domain
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
+)
 
 type RSSMaster struct {
 	ID         string
 	Name       string
 	Url        string
-	LastUpdate utility.WrappedTime
+	LastUpdate wrappedbasics.WrappedTime
 }
 
-func NewRSSMaster(id string, name string, url string, lastupdate utility.WrappedTime) RSSMaster {
+func NewRSSMaster(id string, name string, url string, lastupdate wrappedbasics.WrappedTime) RSSMaster {
 	return RSSMaster{
 		ID:         id,
 		Name:       name,

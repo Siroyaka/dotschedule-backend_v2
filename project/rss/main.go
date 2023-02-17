@@ -5,13 +5,14 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
-	rssmaster "github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/rss/master"
-	rssrequest "github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/rss/request"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/httprequest"
 	rssschedule "github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/rss/schedule"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlrss"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 const (
@@ -55,6 +56,7 @@ func main() {
 	config.Setup(projectName, configValue)
 
 	utility.LoggerStart()
+	wrappedbasics.InitializeWrappedTimeProps()
 
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
@@ -71,17 +73,17 @@ func main() {
 	httpRequestHandler := infrastructure.NewHTTPRequest()
 
 	// repository
-	getMasterRepos := rssmaster.NewGetRepository(
+	getMasterRepos := sqlrss.NewSelectRSSMasterRepository(
 		sqlHandler,
 		queryConfig.Read(config_getRSSMaster),
 	)
 
-	updateMasterRepos := rssmaster.NewUpdateRepository(
+	updateMasterRepos := sqlrss.NewUpdateRSSMasterRepository(
 		sqlHandler,
 		queryConfig.Read(config_updateRSSMaster),
 	)
 
-	requestRepos := rssrequest.NewRequestRepository(httpRequestHandler)
+	requestRepos := httprequest.NewRSSRequestRepository(httpRequestHandler)
 
 	getScheduleRepos := rssschedule.NewGetRepository(
 		sqlHandler,
@@ -108,7 +110,7 @@ func main() {
 	)
 
 	// usecase
-	rssInteractor := usecase.NewRSSInteractor(
+	rssInteractor := interactor.NewRSSInteractor(
 		common,
 		getMasterRepos,
 		updateMasterRepos,

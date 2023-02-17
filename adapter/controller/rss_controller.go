@@ -3,15 +3,15 @@ package controller
 import (
 	"fmt"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
 type RSSController struct {
-	intr usecase.RSSInteractor
+	intr interactor.RSSInteractor
 }
 
-func NewRSSController(intr usecase.RSSInteractor) RSSController {
+func NewRSSController(intr interactor.RSSInteractor) RSSController {
 	return RSSController{
 		intr: intr,
 	}

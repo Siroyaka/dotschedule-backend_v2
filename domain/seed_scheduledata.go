@@ -1,6 +1,8 @@
 package domain
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
+)
 
 type SeedSchedule struct {
 	id             string
@@ -9,10 +11,10 @@ type SeedSchedule struct {
 	participants   []string
 	visibleStatus  int
 	completeStatus int
-	publishedAt    utility.WrappedTime
+	publishedAt    wrappedbasics.WrappedTime
 }
 
-func NewSeedSchedule(id, platformType, status string, publishedAt utility.WrappedTime) SeedSchedule {
+func NewSeedSchedule(id, platformType, status string, publishedAt wrappedbasics.WrappedTime) SeedSchedule {
 	return SeedSchedule{
 		id:             id,
 		platformType:   platformType,
@@ -24,7 +26,7 @@ func NewSeedSchedule(id, platformType, status string, publishedAt utility.Wrappe
 	}
 }
 
-func NewSeedScheduleWithParticipants(id, platformType, status string, publishedAt utility.WrappedTime, participants []string) SeedSchedule {
+func NewSeedScheduleWithParticipants(id, platformType, status string, publishedAt wrappedbasics.WrappedTime, participants []string) SeedSchedule {
 	return SeedSchedule{
 		id:             id,
 		platformType:   platformType,
@@ -36,7 +38,7 @@ func NewSeedScheduleWithParticipants(id, platformType, status string, publishedA
 	}
 }
 
-func (s SeedSchedule) GetPublishedAt() utility.WrappedTime {
+func (s SeedSchedule) GetPublishedAt() wrappedbasics.WrappedTime {
 	return s.publishedAt
 }
 

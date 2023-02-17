@@ -116,6 +116,16 @@ type WrappedTime struct {
 	time time.Time
 }
 
+type IWrappedTime interface {
+	Before(c IWrappedTime) bool
+	After(c IWrappedTime) bool
+	Equal(c IWrappedTime) bool
+	Time() time.Time
+	ToLocalFormatString(format WrappedTimeFormat) string
+	ToUTCFormatString(format WrappedTimeFormat) string
+	Add(y int, m int, d int, hour int, min int, sec int) IWrappedTime
+}
+
 func Now(localLocations string) WrappedTime {
 	now := time.Now()
 	return WrappedTime{
@@ -154,22 +164,26 @@ func NewWrappedTimeFromLocal(t string, baseFormat WrappedTimeFormat) (WrappedTim
 // a.Before(b)の場合はaのほうがbより前であるかを確認する
 //
 // つまり、a < b
-func (t WrappedTime) Before(c WrappedTime) bool {
-	return t.time.Before(c.time)
+func (t WrappedTime) Before(c IWrappedTime) bool {
+	return t.Time().Before(c.Time())
 }
 
 // a.After(b)の場合はaのほうがbより後であるかを確認する
 //
 // つまり、a > b
-func (t WrappedTime) After(c WrappedTime) bool {
-	return t.time.After(c.time)
+func (t WrappedTime) After(c IWrappedTime) bool {
+	return t.Time().After(c.Time())
 }
 
-func (t WrappedTime) Equal(c WrappedTime) bool {
-	return t.time.Equal(c.time)
+func (t WrappedTime) Equal(c IWrappedTime) bool {
+	return t.Time().Equal(c.Time())
 }
 
-func (t *WrappedTime) ToLocalFormatString(format WrappedTimeFormat) string {
+func (t WrappedTime) Time() time.Time {
+	return t.time
+}
+
+func (t WrappedTime) ToLocalFormatString(format WrappedTimeFormat) string {
 	tz, err := time.LoadLocation(WrappedTimeProps.localLocation)
 	if err != nil {
 		return ""
@@ -177,11 +191,11 @@ func (t *WrappedTime) ToLocalFormatString(format WrappedTimeFormat) string {
 	return t.time.In(tz).Format(format.toString())
 }
 
-func (t *WrappedTime) ToUTCFormatString(format WrappedTimeFormat) string {
+func (t WrappedTime) ToUTCFormatString(format WrappedTimeFormat) string {
 	return t.time.UTC().Format(format.toString())
 }
 
-func (t WrappedTime) Add(y int, m int, d int, hour int, min int, sec int) WrappedTime {
+func (t WrappedTime) Add(y int, m int, d int, hour int, min int, sec int) IWrappedTime {
 	n := t.time.AddDate(y, m, d).Add(time.Hour*time.Duration(hour) + time.Minute*time.Duration(min) + time.Second*time.Duration(sec))
 	return WrappedTime{
 		time: n,
