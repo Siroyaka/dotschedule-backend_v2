@@ -1,19 +1,21 @@
 package participants
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
+)
 
 type SingleInsertData struct {
 	streamingId  string
 	platformType string
 	streamerId   string
-	updateAt     utility.WrappedTime
+	updateAt     wrappedbasics.IWrappedTime
 }
 
 func NewSingleInsertData(
 	streamingId string,
 	platformType string,
 	streamerId string,
-	updateAt utility.WrappedTime,
+	updateAt wrappedbasics.IWrappedTime,
 ) SingleInsertData {
 	return SingleInsertData{
 		streamingId:  streamingId,
@@ -23,6 +25,6 @@ func NewSingleInsertData(
 	}
 }
 
-func (ns SingleInsertData) Extract() (string, string, string, utility.WrappedTime) {
+func (ns SingleInsertData) Extract() (string, string, string, wrappedbasics.IWrappedTime) {
 	return ns.streamingId, ns.platformType, ns.streamerId, ns.updateAt
 }

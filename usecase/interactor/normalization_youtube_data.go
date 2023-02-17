@@ -10,6 +10,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type NormalizationYoutubeDataInteractor struct {
@@ -26,7 +27,6 @@ type NormalizationYoutubeDataInteractor struct {
 
 	discordPostRepos abstruct.RepositoryRequest[domain.DiscordWebhookParams, string]
 
-	common         utility.Common
 	durationParser utility.YoutubeDurationParser
 	platformType,
 	streamingUrlPrefix string
@@ -43,7 +43,6 @@ func NewNormalizationYoutubeDataInteractor(
 	insertParticipantsRepos abstruct.RepositoryRequest[participants.SingleInsertData, reference.DBUpdateResponse],
 	youtubeVideoListAPIRepos abstruct.RepositoryRequest[string, domain.YoutubeVideoData],
 	discordPostRepos abstruct.RepositoryRequest[domain.DiscordWebhookParams, string],
-	common utility.Common,
 	durationParser utility.YoutubeDurationParser,
 	platformType,
 	streamingUrlPrefix string,
@@ -58,7 +57,6 @@ func NewNormalizationYoutubeDataInteractor(
 		insertParticipantsRepos:        insertParticipantsRepos,
 		youtubeVideoListAPIRepos:       youtubeVideoListAPIRepos,
 		discordPostRepos:               discordPostRepos,
-		common:                         common,
 		durationParser:                 durationParser,
 		platformType:                   platformType,
 		streamingUrlPrefix:             streamingUrlPrefix,
@@ -104,7 +102,7 @@ func (intr NormalizationYoutubeDataInteractor) makeStatus(videoData domain.Youtu
 	}
 }
 
-func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain.YoutubeVideoData, beforeScheduleData domain.FullScheduleData, streamerMasterMap map[string]domain.StreamerMaster, updateAt utility.WrappedTime) (domain.FullScheduleData, utility.IError) {
+func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain.YoutubeVideoData, beforeScheduleData domain.FullScheduleData, streamerMasterMap map[string]domain.StreamerMaster, updateAt wrappedbasics.IWrappedTime) (domain.FullScheduleData, utility.IError) {
 	result := domain.NewEmptyFullScheduleData(beforeScheduleData.StreamingID, intr.platformType)
 	status, err := intr.makeStatus(videoData)
 	if err != nil {
@@ -112,20 +110,21 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 	}
 	result.Status = status
 
-	var publishDateTime utility.WrappedTime
+	var publishDateTime wrappedbasics.IWrappedTime
+	datetimeFormat := wrappedbasics.WrappedTimeProps.DateTimeFormat()
 	switch status {
 	case "0":
-		publishDateTime, err = intr.common.CreateNewWrappedTimeFromUTC(videoData.Snippet.PublishAt)
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.Snippet.PublishAt, datetimeFormat)
 	case "1", "2":
-		publishDateTime, err = intr.common.CreateNewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ActualStartTime)
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ActualStartTime, datetimeFormat)
 	case "3":
-		publishDateTime, err = intr.common.CreateNewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ScheduledStartTime)
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ScheduledStartTime, datetimeFormat)
 	}
 
 	if err != nil {
 		return result, err.WrapError()
 	}
-	result.PublishDatetime = publishDateTime.ToUTCFormatString()
+	result.PublishDatetime = publishDateTime.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 
 	duration := 0
 	if status == "0" || status == "1" {
@@ -155,7 +154,7 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 	result.Title = videoData.Snippet.Title
 	result.ThumbnailLink = videoData.Snippet.Thumbnail
 	result.Description = videoData.Snippet.Description
-	result.UpdateAt = updateAt.ToUTCFormatString()
+	result.UpdateAt = updateAt.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	result.Url = fmt.Sprintf("%s%s", intr.streamingUrlPrefix, videoData.Id)
 
 	return result, nil
@@ -194,13 +193,9 @@ func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeSche
 		return true
 	}
 
-	now, err := intr.common.Now()
-	if err != nil {
-		utility.LogError(err.WrapError())
-		return false
-	}
+	now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
 
-	startDate, err := intr.common.CreateNewWrappedTimeFromUTC(afterScheduleData.PublishDatetime)
+	startDate, err := wrappedbasics.NewWrappedTimeFromUTC(afterScheduleData.PublishDatetime, wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	if err != nil {
 		utility.LogError(err.WrapError())
 		return false
@@ -263,11 +258,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 	}
 
 	for _, data := range targetSchedules {
-		now, err := intr.common.Now()
-		if err != nil {
-			utility.LogFatal(err.WrapError())
-			return err
-		}
+		now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
 
 		utility.LogInfo(fmt.Sprintf("target id = %s", data.StreamingID))
 

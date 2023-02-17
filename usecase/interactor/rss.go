@@ -17,8 +17,6 @@ type RSSInteractor struct {
 	index      int
 	masterList []domain.RSSMaster
 
-	common utility.Common
-
 	getMasterRepository    abstruct.RepositoryRequest[reference.VoidStruct, []domain.RSSMaster]
 	updateMasterRepository abstruct.RepositoryRequest[reference.IDWithTime, reference.DBUpdateResponse]
 
@@ -33,8 +31,6 @@ type RSSInteractor struct {
 }
 
 func NewRSSInteractor(
-	common utility.Common,
-
 	getMasterRepository abstruct.RepositoryRequest[reference.VoidStruct, []domain.RSSMaster],
 	updateMasterRepository abstruct.RepositoryRequest[reference.IDWithTime, reference.DBUpdateResponse],
 
@@ -51,7 +47,6 @@ func NewRSSInteractor(
 	var intr = RSSInteractor{
 		index:                    -1,
 		masterList:               []domain.RSSMaster{},
-		common:                   common,
 		getMasterRepository:      getMasterRepository,
 		updateMasterRepository:   updateMasterRepository,
 		requestRepository:        requestRepository,
@@ -84,7 +79,6 @@ func (intr *RSSInteractor) Next() bool {
 func (intr RSSInteractor) feedDataToSeedSchedule(
 	feedData utility.IFeed,
 	platformType, feedStatus, videoIdElement, videoIdItemName string,
-	common utility.Common,
 	master domain.RSSMaster,
 ) []domain.SeedSchedule {
 	var seedScheduleList []domain.SeedSchedule
@@ -134,7 +128,6 @@ func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utility.IError) {
 		intr.insertStatus,
 		intr.videoIdElement,
 		intr.videoIdItemName,
-		intr.common,
 		targetMaster,
 	)
 

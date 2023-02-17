@@ -67,15 +67,11 @@ func main() {
 
 	wrappedbasics.InitializeWrappedTimeProps()
 
-	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 	parserConfig := rootConfig.ReadChild(config_parser)
 	discordConfig := rootConfig.ReadChild(config_discord)
-
-	// import
-	common := utility.NewCommon(publicConfig)
 
 	// infrastructure
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
@@ -112,7 +108,6 @@ func main() {
 		insertParticipantsRepos,
 		youtubeVideoListRepos,
 		discordPostRepos,
-		common,
 		utility.NewYoutubeDurationParser(
 			parserConfig.Read(config_parserHour),
 			parserConfig.Read(config_parserMinite),

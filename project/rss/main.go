@@ -59,13 +59,9 @@ func main() {
 	utility.LoggerStart()
 	wrappedbasics.InitializeWrappedTimeProps()
 
-	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
-
-	// import
-	common := utility.NewCommon(publicConfig)
 
 	// infrastructure
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
@@ -96,13 +92,11 @@ func main() {
 
 	insertScheduleRepos := rssschedule.NewInsertRepository(
 		sqlHandler,
-		common,
 		queryConfig.Read(config_insertSchedule),
 	)
 
 	updateScheduleRepos := rssschedule.NewUpdateRepository(
 		sqlHandler,
-		common,
 		queryConfig.Read(config_updateSchedule),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
@@ -111,7 +105,6 @@ func main() {
 
 	// usecase
 	rssInteractor := interactor.NewRSSInteractor(
-		common,
 		getMasterRepos,
 		updateMasterRepos,
 		requestRepos,
