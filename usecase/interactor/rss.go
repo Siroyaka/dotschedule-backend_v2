@@ -22,8 +22,10 @@ type RSSInteractor struct {
 
 	requestRepository abstruct.RepositoryRequest[string, utility.IFeed]
 
-	getScheduleIDRepository  abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]]
-	insertScheduleRepository rssschedule.InsertRepository
+	getScheduleIDRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]]
+	//insertScheduleRepository rssschedule.InsertRepository
+	insertScheduleRepository abstruct.RepositoryRequest[domain.SeedSchedule, reference.DBUpdateResponse]
+
 	updateScheduleRepository rssschedule.UpdateRepository
 
 	completeStatus, notCompleteStatus                       int
@@ -38,7 +40,9 @@ func NewRSSInteractor(
 
 	getScheduleIDRepository abstruct.RepositoryRequest[reference.StreamingIDListWithPlatformID, utility.HashSet[string]],
 
-	insertScheduleRepository rssschedule.InsertRepository,
+	//insertScheduleRepository rssschedule.InsertRepository,
+	insertScheduleRepository abstruct.RepositoryRequest[domain.SeedSchedule, reference.DBUpdateResponse],
+
 	updateScheduleRepository rssschedule.UpdateRepository,
 
 	completeStatus, notCompleteStatus int,
@@ -164,8 +168,12 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 			continue
 		}
 
-		if err = intr.insertScheduleRepository.Insert(seedSchedule); err != nil {
+		if result, err := intr.insertScheduleRepository.Execute(seedSchedule); err != nil {
 			utility.LogError(err.WrapError(fmt.Sprintf("schedule insert error. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
+			isError = true
+			continue
+		} else if result.Count == 0 {
+			utility.LogError(err.WrapError(fmt.Sprintf("schedule insert error. count 0. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
 			isError = true
 			continue
 		}

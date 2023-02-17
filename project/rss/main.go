@@ -90,7 +90,7 @@ func main() {
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
 	)
 
-	insertScheduleRepos := rssschedule.NewInsertRepository(
+	insertScheduleRepos := sqlrepository.NewInsertRSSSeedScheduleRepository(
 		sqlHandler,
 		queryConfig.Read(config_insertSchedule),
 	)
