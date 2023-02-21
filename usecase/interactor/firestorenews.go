@@ -1,19 +1,21 @@
-package usecase
+package interactor
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/firestorenews"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type FirestoreNewsInteractor struct {
-	getFirestoreNewsRepos            firestorenews.GetRepository
+	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews]
+
 	countScheduleRepos               fullschedule.CountRepository
 	insertFullScheduleRepos          fullschedule.InsertRepository
 	updateFullScheduleRepos          fullschedule.UpdateAnyColumnRepository
@@ -28,7 +30,7 @@ type FirestoreNewsInteractor struct {
 }
 
 func NewFirestoreNewsInteractor(
-	getFirestoreNewsRepos firestorenews.GetRepository,
+	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews],
 	countScheduleRepos fullschedule.CountRepository,
 	insertFullScheduleRepos fullschedule.InsertRepository,
 	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository,
@@ -56,31 +58,14 @@ func NewFirestoreNewsInteractor(
 	}
 }
 
-func (intr FirestoreNewsInteractor) converter(videoID string, videoStatus int, updateAt string, participants map[string]bool) (domain.FirestoreNews, utility.IError) {
-	var participantsList []string
-	for k := range participants {
-		participantsList = append(participantsList, k)
-	}
-
-	// update at convert to wrapped time. need common.
-	updateAtTime, err := intr.common.CreateNewWrappedTimeFromLocal(updateAt)
-	if err != nil {
-		return domain.FirestoreNews{}, err.WrapError()
-	}
-
-	return domain.NewFirestoreNews(videoID, videoStatus, updateAtTime, participantsList), nil
-}
-
 func (intr *FirestoreNewsInteractor) DataFetchFromFirestore() utility.IError {
-	now, err := intr.common.Now()
-	if err != nil {
-		return err.WrapError()
-	}
+	now := wrappedbasics.Now()
+
 	targetTime := now.Add(0, 0, 0, 0, -1*intr.firestoreTargetMin, 0)
 
-	utility.LogInfo(fmt.Sprintf("target time UTC: %s - %s, Local: %s - %s", targetTime.ToUTCFormatString(), now.ToUTCFormatString(), targetTime.ToLocalFormatString(), now.ToLocalFormatString()))
+	utility.LogInfo(fmt.Sprintf("target time UTC: %s - %s", targetTime.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()), now.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())))
 
-	list, err := intr.getFirestoreNewsRepos.Get(intr.converter, targetTime)
+	list, err := intr.getFirestoreNewsRepos.Execute(targetTime)
 	if err != nil {
 		return err.WrapError()
 	}

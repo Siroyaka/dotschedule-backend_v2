@@ -1,15 +1,17 @@
 package domain
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
+)
 
 type FirestoreNews struct {
-	UpdateAt     utility.WrappedTime
+	UpdateAt     wrappedbasics.IWrappedTime
 	VideoID      string
 	VideoStatus  int
 	Participants []string
 }
 
-func NewFirestoreNews(videoID string, videoStatus int, updateAt utility.WrappedTime, participants []string) FirestoreNews {
+func NewFirestoreNews(videoID string, videoStatus int, updateAt wrappedbasics.IWrappedTime, participants []string) FirestoreNews {
 	return FirestoreNews{
 		UpdateAt:     updateAt,
 		VideoID:      videoID,

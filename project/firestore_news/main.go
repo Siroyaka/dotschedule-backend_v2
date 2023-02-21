@@ -5,12 +5,12 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/firestorenews"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fullschedule"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/otheroutbound"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -88,7 +88,7 @@ func main() {
 	defer sqlHandler.Close()
 
 	// repository
-	fRepos := firestorenews.NewGetRepository(
+	fRepos := otheroutbound.NewGetFirestoreNewsRepository(
 		fs,
 		rootConfig.Read(config_collectionName),
 		rootConfig.Read(config_compareble),
@@ -141,7 +141,7 @@ func main() {
 	)
 
 	// usecase
-	firestoreNewsIntr := usecase.NewFirestoreNewsInteractor(
+	firestoreNewsIntr := interactor.NewFirestoreNewsInteractor(
 		fRepos,
 		cRepos,
 		ifRepos,

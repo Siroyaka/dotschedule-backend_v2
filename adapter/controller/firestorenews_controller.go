@@ -1,15 +1,15 @@
 package controller
 
 import (
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
 type FirestoreNewsController struct {
-	firestoreNewsIntr usecase.FirestoreNewsInteractor
+	firestoreNewsIntr interactor.FirestoreNewsInteractor
 }
 
-func NewFirestoreNewsController(firestoreNewsIntr usecase.FirestoreNewsInteractor) FirestoreNewsController {
+func NewFirestoreNewsController(firestoreNewsIntr interactor.FirestoreNewsInteractor) FirestoreNewsController {
 	return FirestoreNewsController{
 		firestoreNewsIntr: firestoreNewsIntr,
 	}
