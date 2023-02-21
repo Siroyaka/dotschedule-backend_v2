@@ -120,7 +120,7 @@ func main() {
 		queryConfig.Read(config_platformIdGetQuery),
 	)
 
-	gpRepos := streamingparticipants.NewGetRepository(
+	gpRepos := sqlrepository.NewSelectParticipantsRepository(
 		sqlHandler,
 		queryConfig.Read(config_participantsGetQuery),
 	)
@@ -133,7 +133,7 @@ func main() {
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
 	)
 
-	dpRepos := streamingparticipants.NewDeleteStreamingParticipants(
+	dpRepos := sqlrepository.NewDeleteParticipantsRepository(
 		sqlHandler,
 		queryConfig.Read(config_participantsDeleteQuery),
 		sqlConfig.Read(config_sqlReplaceTargetString),

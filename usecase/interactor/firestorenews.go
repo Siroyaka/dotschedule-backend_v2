@@ -23,9 +23,9 @@ type FirestoreNewsInteractor struct {
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository
 
-	getStreamingParticipantsRepos    streamingparticipants.GetRepository
+	getStreamingParticipantsRepos    abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants]
 	insertStreamingParticipantsRepos streamingparticipants.InsertRepository
-	deleteStreamingParticipantsRepos streamingparticipants.DeleteRepository
+	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse]
 
 	common             utility.Common
 	firestoreTargetMin int
@@ -40,9 +40,10 @@ func NewFirestoreNewsInteractor(
 	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
-	getStreamingParticipantsRepos streamingparticipants.GetRepository,
+	getStreamingParticipantsRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants],
 	insertStreamingParticipantsRepos streamingparticipants.InsertRepository,
-	deleteStreamingParticipantsRepos streamingparticipants.DeleteRepository,
+	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse],
+
 	common utility.Common,
 	firestoreTargetMin int,
 	platform string,
@@ -109,6 +110,7 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 	return nil
 }
 
+// firestorenewsのデータをparticipantsのデータに変換
 func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data domain.FirestoreNews) (domain.StreamingParticipants, utility.IError) {
 	platformToStreamerIdMap, err := intr.getPlatformIdRepos.GetPlatformIdToStreamerId(intr.platform)
 	if err != nil {
@@ -122,17 +124,19 @@ func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data do
 	return res, nil
 }
 
+// Firestoreから取得したparticipantsのデータとDBのparticipantsのデータを揃える(Firestoreのデータを正とする)
 func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingParticipants) utility.IError {
 	now, err := intr.common.Now()
 	if err != nil {
 		return err.WrapError()
 	}
 
-	dbData, err := intr.getStreamingParticipantsRepos.Get(data.StreamingID(), data.Platform())
+	dbData, err := intr.getStreamingParticipantsRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID(), data.Platform()))
 	if err != nil {
 		return err.WrapError("participants data get error")
 	}
 
+	// firestoreのデータに入っていないものを削除データとしてピックアップする
 	deleteList := domain.NewStreamingParticipants(data.StreamingID(), data.Platform())
 	for _, v := range dbData.GetList() {
 		if data.Has(v) {
@@ -145,12 +149,11 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 	responseError = nil
 	if !deleteList.IsEmpty() {
 		utility.LogInfo(fmt.Sprintf("delete participants data. id: %s [%s]", deleteList.StreamingID(), strings.Join(deleteList.GetList(), ", ")))
-		deleteCount, err := intr.deleteStreamingParticipantsRepos.Delete(deleteList)
-		if err != nil {
+		if deleteResult, err := intr.deleteStreamingParticipantsRepos.Execute(deleteList); err != nil {
 			utility.LogError(err.WrapError("delete participants error"))
 			responseError = err.WrapError()
-		} else if deleteCount < int64(len(deleteList.GetList())) {
-			utility.LogError(utility.NewError(fmt.Sprintf("delete data count wrong. list count: %d. delete count: %d", len(deleteList.GetList()), deleteCount), ""))
+		} else if deleteResult.Count < int64(len(deleteList.GetList())) {
+			utility.LogError(utility.NewError(fmt.Sprintf("delete data count wrong. list count: %d. delete count: %d", len(deleteList.GetList()), deleteResult.Count), ""))
 		}
 	}
 
@@ -187,6 +190,7 @@ func (intr FirestoreNewsInteractor) UpdateDB(firestoreData []domain.FirestoreNew
 			utility.LogFatal(err.WrapError(fmt.Sprintf("platform id convert to streamer id error. id: %s", data.VideoID)))
 			return
 		}
+
 		if err := intr.updateParticipants(streamingParticipants); err != nil {
 			utility.LogFatal(err.WrapError(fmt.Sprintf("participants update error id: %s", data.VideoID)))
 		}
