@@ -22,5 +22,10 @@ func (controller FirestoreNewsController) Exec() {
 		return
 	}
 
+	if len(firestoreData) == 0 {
+		utility.LogDebug("firestoreNews no data")
+		return
+	}
+
 	controller.firestoreNewsIntr.UpdateDB(firestoreData)
 }

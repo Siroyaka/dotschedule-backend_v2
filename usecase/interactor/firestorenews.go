@@ -9,6 +9,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamingparticipants"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -16,7 +17,8 @@ import (
 type FirestoreNewsInteractor struct {
 	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews]
 
-	countScheduleRepos      fullschedule.CountRepository
+	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool]
+
 	insertFullScheduleRepos fullschedule.InsertRepository
 	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository
 
@@ -33,7 +35,8 @@ type FirestoreNewsInteractor struct {
 
 func NewFirestoreNewsInteractor(
 	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews],
-	countScheduleRepos fullschedule.CountRepository,
+	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool],
+
 	insertFullScheduleRepos fullschedule.InsertRepository,
 	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository,
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
@@ -46,7 +49,7 @@ func NewFirestoreNewsInteractor(
 ) FirestoreNewsInteractor {
 	return FirestoreNewsInteractor{
 		getFirestoreNewsRepos:            getFirestoreNewsRepos,
-		countScheduleRepos:               countScheduleRepos,
+		containsScheduleRepos:            containsScheduleRepos,
 		insertFullScheduleRepos:          insertFullScheduleRepos,
 		updateFullScheduleRepos:          updateFullScheduleRepos,
 		getPlatformIdRepos:               getPlatformIdRepos,
@@ -80,27 +83,19 @@ func (intr FirestoreNewsInteractor) firestoreNewsToFullSchedule(data domain.Fire
 	return fullScheduleData
 }
 
+// dbにすでにデータが存在しているか確認し、存在しているならupdate、存在していないならinsertを行う
 func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData) utility.IError {
 	now, err := intr.common.Now()
 	if err != nil {
 		return err.WrapError()
 	}
 
-	cnt, err := intr.countScheduleRepos.Count(data.StreamingID, data.PlatformType)
+	alreadyContains, err := intr.containsScheduleRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID, data.PlatformType))
 	if err != nil {
 		return err.WrapError("schedule data count error")
 	}
 
-	if cnt == 0 {
-		utility.LogInfo(fmt.Sprintf("insert schedule. id: %s", data.StreamingID))
-		insertCount, err := intr.insertFullScheduleRepos.Insert(data, now)
-		if err != nil {
-			return err.WrapError("schedule data insert error")
-		}
-		if insertCount == 0 {
-			return utility.NewError("schedule data insert count is 0", "")
-		}
-	} else {
+	if alreadyContains {
 		utility.LogInfo(fmt.Sprintf("update schedule. id: %s", data.StreamingID))
 		updateCount, err := intr.updateFullScheduleRepos.Update(now, data.IsCompleteData, data.StreamingID, data.PlatformType)
 		if err != nil {
@@ -108,6 +103,15 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 		}
 		if updateCount == 0 {
 			return utility.NewError("schedule data update count is 0", "")
+		}
+	} else {
+		utility.LogInfo(fmt.Sprintf("insert schedule. id: %s", data.StreamingID))
+		insertCount, err := intr.insertFullScheduleRepos.Insert(data, now)
+		if err != nil {
+			return err.WrapError("schedule data insert error")
+		}
+		if insertCount == 0 {
+			return utility.NewError("schedule data insert count is 0", "")
 		}
 	}
 	return nil
@@ -180,10 +184,6 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 }
 
 func (intr FirestoreNewsInteractor) UpdateDB(firestoreData []domain.FirestoreNews) {
-	if len(firestoreData) == 0 {
-		utility.LogDebug("firestoreNews no data")
-		return
-	}
 	for _, data := range firestoreData {
 		fullScheduleData := intr.firestoreNewsToFullSchedule(data)
 		if err := intr.updateSchedule(fullScheduleData); err != nil {

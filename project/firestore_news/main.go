@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/otheroutbound"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlcontains"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
@@ -99,7 +100,7 @@ func main() {
 		firestoreDocumentConfig.Read(config_updateAtDocument),
 	)
 
-	cRepos := fullschedule.NewCountRepository(
+	cRepos := sqlcontains.NewContainsScheduleRepository(
 		sqlHandler,
 		queryConfig.Read(config_scheduleCountQuery),
 	)
