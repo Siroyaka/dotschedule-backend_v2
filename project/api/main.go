@@ -7,11 +7,12 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/viewschedule"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 const (
@@ -28,8 +29,8 @@ const (
 	config_sqlArraySplitter = "ARRAY_SPLITTER"
 
 	config_query       = "QUERY"
-	config_getschedule = "GET_SCHEDULE"
-	config_getmonth    = "GET_MONTH_DATA"
+	config_getschedule = "GET_DAYSCHEDULE"
+	config_getmonth    = "GET_DAYS_PARTICIPANTS_LIST"
 
 	config_localTimeDifference = "LOCAL_TIMEDIFFERENCE"
 	config_viewingStatus       = "VIEWING_STATUS"
@@ -55,8 +56,9 @@ func main() {
 	config.Setup(projectName, configValue)
 
 	utility.LoggerStart()
+	wrappedbasics.InitializeWrappedTimeProps()
 
-	publicConfig := config.ReadChild(config_public)
+	//publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
@@ -64,44 +66,41 @@ func main() {
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
 
-	common := utility.NewCommon(publicConfig)
-
-	scheduleRepository := viewschedule.NewGetRepository(
+	scheduleRepository := sqlapi.NewSelectSchedulesRepository(
 		sqlHandler,
 		queryConfig.Read(config_getschedule),
-		queryConfig.Read(config_getmonth),
-		rootConfig.Read(config_localTimeDifference),
+		rootConfig.ReadInteger(config_viewingStatus),
 	)
 
-	scheduleInteractor := usecase.NewScheduleInteractor(
-		scheduleRepository,
-		sqlConfig.Read(config_sqlDataSplitter),
-		sqlConfig.Read(config_sqlArraySplitter),
+	selectDaysParticipantsRepository := sqlapi.NewSelectDaysParticipantsRepository(
+		sqlHandler,
+		queryConfig.Read(config_getmonth),
 		rootConfig.ReadInteger(config_viewingStatus),
-		common,
+		rootConfig.ReadInteger(config_localTimeDifference),
 	)
-	monthDataInteractor := usecase.NewMonthInteractor(
+
+	scheduleInteractor := interactor.NewDayScheduleInteractor(
 		scheduleRepository,
-		sqlConfig.Read(config_sqlDataSplitter),
-		sqlConfig.Read(config_sqlArraySplitter),
-		rootConfig.ReadInteger(config_viewingStatus),
-		common,
+	)
+
+	monthDataInteractor := interactor.NewDaysParticipantsInteractor(
+		selectDaysParticipantsRepository,
 	)
 
 	scController := controller.NewScheduleController(
-		common,
 		scheduleInteractor,
 		rootConfig.Read(config_contentType),
 	)
-	monController := controller.NewMonthRequestController(
-		common,
+
+	monthController := controller.NewMonthRequestController(
 		monthDataInteractor,
 		rootConfig.Read(config_contentType),
+		rootConfig.ReadInteger(config_localTimeDifference),
 	)
 
 	router := infrastructure.NewRouter(rootConfig.Read(config_port))
 	router.SetHandle(rootConfig.Read(config_scheduleRoute), scController.ScheduleRequestHandler())
-	router.SetHandle(rootConfig.Read(config_monthRoute), monController.MonthRequestHandler())
+	router.SetHandle(rootConfig.Read(config_monthRoute), monthController.MonthRequestHandler())
 	router.SetHandleFunc(heartBeatRoute, heartBeat)
 	router.Run()
 }

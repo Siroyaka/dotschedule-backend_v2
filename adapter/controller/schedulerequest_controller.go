@@ -4,19 +4,18 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type ViewScheduleController struct {
-	common       utility.Common
-	scheduleIntr usecase.ScheduleInteractor
+	scheduleIntr interactor.DayScheduleInteractor
 	contentType  string
 }
 
-func NewScheduleController(common utility.Common, scheduleIntr usecase.ScheduleInteractor, contentType string) ViewScheduleController {
+func NewScheduleController(scheduleIntr interactor.DayScheduleInteractor, contentType string) ViewScheduleController {
 	return ViewScheduleController{
-		common:       common,
 		scheduleIntr: scheduleIntr,
 		contentType:  contentType,
 	}
@@ -35,7 +34,7 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	baseDate, err := c.common.CreateNewWrappedTimeFromLocalDate(date)
+	fromDate, err := wrappedbasics.NewWrappedTimeFromLocal(date, wrappedbasics.WrappedTimeProps.DateFormat())
 
 	if err != nil {
 		utility.LogError(err.WrapError())
@@ -45,9 +44,11 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	utility.LogInfo(fmt.Sprintf("Schedule Request. Date: %s", baseDate.ToLocalDateString("/")))
+	toDate := fromDate.Add(0, 0, 1, 0, 0, 0)
 
-	list, err := c.scheduleIntr.GetScheduleData(baseDate)
+	utility.LogInfo(fmt.Sprintf("Schedule Request. Date: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateFormat())))
+
+	list, err := c.scheduleIntr.GetScheduleData(fromDate, toDate)
 
 	if err != nil {
 		utility.LogFatal(err.WrapError())

@@ -5,26 +5,48 @@ import (
 	"net/http"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type MonthRequestController struct {
-	common          utility.Common
-	monthInteractor usecase.MonthInteractor
-	contentType     string
+	monthInteractor     interactor.DaysParticipantsInteractor
+	contentType         string
+	localTimeDifference int
 }
 
-func NewMonthRequestController(common utility.Common, MonthInteractor usecase.MonthInteractor, contentType string) MonthRequestController {
+func NewMonthRequestController(
+	MonthInteractor interactor.DaysParticipantsInteractor,
+	contentType string,
+	localTimeDifference int,
+) MonthRequestController {
 	return MonthRequestController{
-		common:          common,
-		monthInteractor: MonthInteractor,
-		contentType:     contentType,
+		monthInteractor:     MonthInteractor,
+		contentType:         contentType,
+		localTimeDifference: localTimeDifference,
 	}
 }
 
 func (c MonthRequestController) MonthRequestHandler() http.Handler {
 	return http.HandlerFunc(c.monthRequest)
+}
+
+// Goの月の加算は、単純に月を加算し、もしその月に該当の日がなければその分次の月に繰り越して計算するようになっている
+//
+// なので、3/31に1ヶ月加算すると4/31 = 5/1となってしまう
+//
+// 加えて、UTCで計算されるようになっている。
+//
+// なので、JTCの4/1 0:00は3/31 15:00からの計算となる
+//
+// そのため、単純に4/1の1ヶ月後を計算するとJTCに直したときには5/2になってしまう
+//
+//	4/1 = 3/31 15:00 の1ヶ月後 = 5/1 15:00 = 5/2
+//
+// なので、時差を計算することで無理やりこれを解消する
+func (c MonthRequestController) monthAdd(fromDate wrappedbasics.IWrappedTime, addRange int) wrappedbasics.IWrappedTime {
+	return fromDate.Add(0, 0, 0, c.localTimeDifference, 0, 0).Add(0, addRange, 0, 0, 0, 0).Add(0, 0, 0, -1*c.localTimeDifference, 0, 0)
 }
 
 func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +58,7 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	baseDate, err := c.common.CreateNewWrappedTimeFromLocalMonth(month)
+	fromDate, err := wrappedbasics.NewWrappedTimeFromLocal(month, wrappedbasics.WrappedTimeProps.MonthFormat())
 
 	if err != nil {
 		utility.LogError(err.WrapError())
@@ -47,7 +69,9 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 
 	utility.LogInfo(fmt.Sprintf("Month Request. month: %s", month))
 
-	list, err := c.monthInteractor.GetMonthData(baseDate)
+	toDate := c.monthAdd(fromDate, 1)
+
+	list, err := c.monthInteractor.GetMonthData(fromDate, toDate)
 
 	if err != nil {
 		utility.LogError(err.WrapError())
