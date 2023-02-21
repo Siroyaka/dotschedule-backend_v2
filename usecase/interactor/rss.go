@@ -177,17 +177,19 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 		insertCount++
 	}
 
-	if result, err := intr.updateScheduleRepository.Execute(reference.NewStreamingIDListWithPlatformID(updateList, intr.platform)); err != nil {
-		ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
-		isError = true
-		return
-	} else if result.Count == 0 {
-		ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
-		isError = true
-		return
-	}
-
 	if updateList != nil {
+		if result, err := intr.updateScheduleRepository.Execute(reference.NewStreamingIDListWithPlatformID(updateList, intr.platform)); err != nil {
+			utility.LogDebug(err.Error())
+			ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+			isError = true
+			return
+		} else if result.Count == 0 {
+			utility.LogDebug("test4")
+			ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+			isError = true
+			return
+		}
+
 		utility.LogInfo(fmt.Sprintf("schedule update finished. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
 	}
 
