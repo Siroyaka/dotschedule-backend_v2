@@ -6,7 +6,6 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -20,13 +19,12 @@ type FirestoreNewsInteractor struct {
 	insertFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 
-	getPlatformIdRepos streamermaster.GetPlatformIdRepository
+	getPlatformIdRepos abstruct.RepositoryRequest[string, map[string]string]
 
 	getStreamingParticipantsRepos    abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants]
 	insertStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse]
 	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse]
 
-	common             utility.Common
 	firestoreTargetMin int
 	platform           string
 }
@@ -38,12 +36,11 @@ func NewFirestoreNewsInteractor(
 	insertFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 
-	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
+	getPlatformIdRepos abstruct.RepositoryRequest[string, map[string]string],
 	getStreamingParticipantsRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants],
 	insertStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse],
 	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse],
 
-	common utility.Common,
 	firestoreTargetMin int,
 	platform string,
 ) FirestoreNewsInteractor {
@@ -56,7 +53,6 @@ func NewFirestoreNewsInteractor(
 		getStreamingParticipantsRepos:    getStreamingParticipantsRepos,
 		insertStreamingParticipantsRepos: insertStreamingParticipantsRepos,
 		deleteStreamingParticipantsRepos: deleteStreamingParticipantsRepos,
-		common:                           common,
 		firestoreTargetMin:               firestoreTargetMin,
 		platform:                         platform,
 	}
@@ -111,10 +107,12 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 
 // firestorenewsのデータをparticipantsのデータに変換
 func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data domain.FirestoreNews) (domain.StreamingParticipants, utility.IError) {
-	platformToStreamerIdMap, err := intr.getPlatformIdRepos.GetPlatformIdToStreamerId(intr.platform)
+
+	platformToStreamerIdMap, err := intr.getPlatformIdRepos.Execute(intr.platform)
 	if err != nil {
 		return domain.EmptyStreamingParticipants(), err.WrapError()
 	}
+
 	platformParticipants := domain.NewPlatformParticipants(data.VideoID, intr.platform, data.Participants...)
 	for k, v := range platformToStreamerIdMap {
 		platformParticipants.AddConvertData(v, k)

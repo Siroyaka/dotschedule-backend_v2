@@ -8,7 +8,6 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/otheroutbound"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlcontains"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
@@ -68,14 +67,11 @@ func main() {
 	utility.LoggerStart()
 	wrappedbasics.InitializeWrappedTimeProps()
 
-	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 	firestoreDocumentConfig := rootConfig.ReadChild(config_firestoreDocument)
-
-	common := utility.NewCommon(publicConfig)
 
 	// infrastructure
 	fs := infrastructure.NewFirestore(
@@ -114,7 +110,7 @@ func main() {
 		queryConfig.Read(config_scheduleUpdateQuery),
 	)
 
-	gmRepos := streamermaster.NewGetPlatformIdRepository(
+	gmRepos := sqlrepository.NewSelectPlatformIDWithStreamerIDRepository(
 		sqlHandler,
 		queryConfig.Read(config_platformIdGetQuery),
 	)
@@ -150,7 +146,6 @@ func main() {
 		gpRepos,
 		ipRepos,
 		dpRepos,
-		common,
 		rootConfig.ReadInteger(config_firestoreNewsTargetMin),
 		rootConfig.Read(config_platform),
 	)
