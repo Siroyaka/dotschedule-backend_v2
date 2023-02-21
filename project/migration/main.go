@@ -14,6 +14,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 const (
@@ -50,6 +51,7 @@ func main() {
 	config.Setup(projectName, configValue)
 
 	utility.LoggerStart()
+	wrappedbasics.InitializeWrappedTimeProps()
 
 	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
