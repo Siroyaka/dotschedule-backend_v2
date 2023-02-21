@@ -9,7 +9,6 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlcontains"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamermaster"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
@@ -125,7 +124,7 @@ func main() {
 		queryConfig.Read(config_participantsGetQuery),
 	)
 
-	ipRepos := streamingparticipants.NewInsertRepository(
+	ipRepos := sqlrepository.NewInsertParticipantsRepository(
 		sqlHandler,
 		queryConfig.Read(config_participantsInsertQuery),
 		sqlConfig.Read(config_sqlReplaceTargetString),

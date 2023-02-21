@@ -7,7 +7,6 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamermaster"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -24,7 +23,7 @@ type FirestoreNewsInteractor struct {
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository
 
 	getStreamingParticipantsRepos    abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants]
-	insertStreamingParticipantsRepos streamingparticipants.InsertRepository
+	insertStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse]
 	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse]
 
 	common             utility.Common
@@ -41,7 +40,7 @@ func NewFirestoreNewsInteractor(
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
 	getStreamingParticipantsRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, domain.StreamingParticipants],
-	insertStreamingParticipantsRepos streamingparticipants.InsertRepository,
+	insertStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse],
 	deleteStreamingParticipantsRepos abstruct.RepositoryRequest[domain.StreamingParticipants, reference.DBUpdateResponse],
 
 	common utility.Common,
@@ -126,10 +125,6 @@ func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data do
 
 // Firestoreから取得したparticipantsのデータとDBのparticipantsのデータを揃える(Firestoreのデータを正とする)
 func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingParticipants) utility.IError {
-	now, err := intr.common.Now()
-	if err != nil {
-		return err.WrapError()
-	}
 
 	dbData, err := intr.getStreamingParticipantsRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID(), data.Platform()))
 	if err != nil {
@@ -149,6 +144,7 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 	responseError = nil
 	if !deleteList.IsEmpty() {
 		utility.LogInfo(fmt.Sprintf("delete participants data. id: %s [%s]", deleteList.StreamingID(), strings.Join(deleteList.GetList(), ", ")))
+
 		if deleteResult, err := intr.deleteStreamingParticipantsRepos.Execute(deleteList); err != nil {
 			utility.LogError(err.WrapError("delete participants error"))
 			responseError = err.WrapError()
@@ -157,6 +153,7 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 		}
 	}
 
+	// firestoreにあるがDBにないデータを追加用のデータとしてピックアップする
 	insertList := domain.NewStreamingParticipants(data.StreamingID(), data.Platform())
 	for _, v := range data.GetList() {
 		if dbData.Has(v) {
@@ -167,12 +164,12 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 
 	if !insertList.IsEmpty() {
 		utility.LogInfo(fmt.Sprintf("insert participants data. id: %s [%s]", insertList.StreamingID(), strings.Join(insertList.GetList(), ", ")))
-		insertCount, err := intr.insertStreamingParticipantsRepos.InsertStreamingParticipants(insertList, now)
-		if err != nil {
+
+		if insertResult, err := intr.insertStreamingParticipantsRepos.Execute(insertList); err != nil {
 			utility.LogError(err.WrapError("insert participants error"))
 			responseError = err.WrapError()
-		} else if insertCount < int64(len(insertList.GetList())) {
-			utility.LogError(utility.NewError(fmt.Sprintf("insert data count wrong. list count: %d. insert count: %d", len(insertList.GetList()), insertCount), ""))
+		} else if insertResult.Count < int64(len(insertList.GetList())) {
+			utility.LogError(utility.NewError(fmt.Sprintf("insert data count wrong. list count: %d. insert count: %d", len(insertList.GetList()), insertResult.Count), ""))
 		}
 	}
 	return responseError
