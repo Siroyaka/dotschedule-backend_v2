@@ -16,10 +16,11 @@ func NewFirestoreNewsController(firestoreNewsIntr interactor.FirestoreNewsIntera
 }
 
 func (controller FirestoreNewsController) Exec() {
-	if err := controller.firestoreNewsIntr.DataFetchFromFirestore(); err != nil {
+	firestoreData, err := controller.firestoreNewsIntr.DataFetchFromFirestore()
+	if err != nil {
 		utility.LogFatal(err.WrapError())
 		return
 	}
 
-	controller.firestoreNewsIntr.UpdateDB()
+	controller.firestoreNewsIntr.UpdateDB(firestoreData)
 }

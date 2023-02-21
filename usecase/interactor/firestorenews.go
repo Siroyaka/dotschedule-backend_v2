@@ -16,17 +16,19 @@ import (
 type FirestoreNewsInteractor struct {
 	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews]
 
-	countScheduleRepos               fullschedule.CountRepository
-	insertFullScheduleRepos          fullschedule.InsertRepository
-	updateFullScheduleRepos          fullschedule.UpdateAnyColumnRepository
-	getPlatformIdRepos               streamermaster.GetPlatformIdRepository
+	countScheduleRepos      fullschedule.CountRepository
+	insertFullScheduleRepos fullschedule.InsertRepository
+	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository
+
+	getPlatformIdRepos streamermaster.GetPlatformIdRepository
+
 	getStreamingParticipantsRepos    streamingparticipants.GetRepository
 	insertStreamingParticipantsRepos streamingparticipants.InsertRepository
 	deleteStreamingParticipantsRepos streamingparticipants.DeleteRepository
-	common                           utility.Common
-	firestoreTargetMin               int
-	platform                         string
-	firestoreData                    []domain.FirestoreNews
+
+	common             utility.Common
+	firestoreTargetMin int
+	platform           string
 }
 
 func NewFirestoreNewsInteractor(
@@ -54,11 +56,10 @@ func NewFirestoreNewsInteractor(
 		common:                           common,
 		firestoreTargetMin:               firestoreTargetMin,
 		platform:                         platform,
-		firestoreData:                    []domain.FirestoreNews{},
 	}
 }
 
-func (intr *FirestoreNewsInteractor) DataFetchFromFirestore() utility.IError {
+func (intr FirestoreNewsInteractor) DataFetchFromFirestore() ([]domain.FirestoreNews, utility.IError) {
 	now := wrappedbasics.Now()
 
 	targetTime := now.Add(0, 0, 0, 0, -1*intr.firestoreTargetMin, 0)
@@ -67,10 +68,10 @@ func (intr *FirestoreNewsInteractor) DataFetchFromFirestore() utility.IError {
 
 	list, err := intr.getFirestoreNewsRepos.Execute(targetTime)
 	if err != nil {
-		return err.WrapError()
+		return nil, err.WrapError()
 	}
-	intr.firestoreData = list
-	return nil
+
+	return list, nil
 }
 
 func (intr FirestoreNewsInteractor) firestoreNewsToFullSchedule(data domain.FirestoreNews) domain.FullScheduleData {
@@ -178,12 +179,12 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 	return responseError
 }
 
-func (intr FirestoreNewsInteractor) UpdateDB() {
-	if len(intr.firestoreData) == 0 {
+func (intr FirestoreNewsInteractor) UpdateDB(firestoreData []domain.FirestoreNews) {
+	if len(firestoreData) == 0 {
 		utility.LogDebug("firestoreNews no data")
 		return
 	}
-	for _, data := range intr.firestoreData {
+	for _, data := range firestoreData {
 		fullScheduleData := intr.firestoreNewsToFullSchedule(data)
 		if err := intr.updateSchedule(fullScheduleData); err != nil {
 			utility.LogFatal(err.WrapError(fmt.Sprintf("schedule update error id: %s", data.VideoID)))
