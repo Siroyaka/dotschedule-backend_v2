@@ -6,16 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-
-	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 )
-
-type Common struct {
-	timeFormat   string
-	dateFormat   string
-	monthFormat  string
-	timeLocation string
-}
 
 const (
 	EmptyString = ""
@@ -26,67 +17,6 @@ const (
 	config_monthFormat  = "MONTH_FORMAT"
 	config_timeLocation = "LOCAL_LOCATION"
 )
-
-func NewCommon(config config.IConfig) Common {
-	return Common{
-		timeFormat:   config.Read(config_timeFormat),
-		dateFormat:   config.Read(config_dateFormat),
-		monthFormat:  config.Read(config_monthFormat),
-		timeLocation: config.Read(config_timeLocation),
-	}
-}
-
-func (c Common) TimeFormat() string {
-	return c.timeFormat
-}
-
-func (c Common) Now() (WrappedTime, IError) {
-	return Now(c.timeLocation, c.timeFormat)
-}
-
-func (c Common) CreateNewWrappedTimeFromUTCMonth(t string) (WrappedTime, IError) {
-	w, err := NewWrappedTimeFromUTC(t, c.timeLocation, c.monthFormat)
-	if err != nil {
-		return w, err
-	}
-	w.SetTimeFormat(c.timeFormat)
-	return w, nil
-}
-
-func (c Common) CreateNewWrappedTimeFromUTCDate(t string) (WrappedTime, IError) {
-	w, err := NewWrappedTimeFromUTC(t, c.timeLocation, c.dateFormat)
-	if err != nil {
-		return w, err
-	}
-	w.SetTimeFormat(c.timeFormat)
-	return w, nil
-}
-
-func (c Common) CreateNewWrappedTimeFromUTC(t string) (WrappedTime, IError) {
-	return NewWrappedTimeFromUTC(t, c.timeLocation, c.timeFormat)
-}
-
-func (c Common) CreateNewWrappedTimeFromLocalMonth(t string) (WrappedTime, IError) {
-	w, err := NewWrappedTimeFromLocal(t, c.timeLocation, c.monthFormat)
-	if err != nil {
-		return w, err
-	}
-	w.SetTimeFormat(c.timeFormat)
-	return w, nil
-}
-
-func (c Common) CreateNewWrappedTimeFromLocalDate(t string) (WrappedTime, IError) {
-	w, err := NewWrappedTimeFromLocal(t, c.timeLocation, c.dateFormat)
-	if err != nil {
-		return w, err
-	}
-	w.SetTimeFormat(c.timeFormat)
-	return w, nil
-}
-
-func (c Common) CreateNewWrappedTimeFromLocal(t string) (WrappedTime, IError) {
-	return NewWrappedTimeFromLocal(t, c.timeLocation, c.timeFormat)
-}
 
 func ReplaceConstString(src, repl, target string) string {
 	target = replaceConst + target + replaceConst
