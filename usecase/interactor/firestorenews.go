@@ -20,7 +20,8 @@ type FirestoreNewsInteractor struct {
 	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool]
 
 	insertFullScheduleRepos fullschedule.InsertRepository
-	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository
+
+	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository
 
@@ -38,7 +39,9 @@ func NewFirestoreNewsInteractor(
 	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool],
 
 	insertFullScheduleRepos fullschedule.InsertRepository,
-	updateFullScheduleRepos fullschedule.UpdateAnyColumnRepository,
+
+	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
+
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
 	getStreamingParticipantsRepos streamingparticipants.GetRepository,
 	insertStreamingParticipantsRepos streamingparticipants.InsertRepository,
@@ -97,11 +100,9 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 
 	if alreadyContains {
 		utility.LogInfo(fmt.Sprintf("update schedule. id: %s", data.StreamingID))
-		updateCount, err := intr.updateFullScheduleRepos.Update(now, data.IsCompleteData, data.StreamingID, data.PlatformType)
-		if err != nil {
+		if updateResult, err := intr.updateFullScheduleRepos.Execute(data); err != nil {
 			return err.WrapError("schedule data update error")
-		}
-		if updateCount == 0 {
+		} else if updateResult.Count == 0 {
 			return utility.NewError("schedule data update count is 0", "")
 		}
 	} else {

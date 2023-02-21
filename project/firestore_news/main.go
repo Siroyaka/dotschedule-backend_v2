@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/otheroutbound"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlcontains"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamingparticipants"
@@ -110,7 +111,7 @@ func main() {
 		queryConfig.Read(config_scheduleInsertQuery),
 	)
 
-	ufRepos := fullschedule.NewUpdateAnyColumnRepository(
+	ufRepos := sqlrepository.NewUpdateScheduleCompleteStatusRepository(
 		sqlHandler,
 		queryConfig.Read(config_scheduleUpdateQuery),
 	)
