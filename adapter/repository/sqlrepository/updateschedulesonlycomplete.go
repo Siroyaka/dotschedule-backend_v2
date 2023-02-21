@@ -38,7 +38,7 @@ func (repos UpdateScheduleOnlyCompleteTo0Repository) Execute(data reference.Stre
 		return reference.DBUpdateResponse{}, nil
 	}
 
-	now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
+	now := wrappedbasics.Now()
 	var replacedCharList []string
 	for i := 0; i < len(idList); i++ {
 		replacedCharList = append(replacedCharList, repos.replaceChar)

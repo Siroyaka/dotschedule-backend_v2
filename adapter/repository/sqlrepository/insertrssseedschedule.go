@@ -20,7 +20,7 @@ func NewInsertRSSSeedScheduleRepository(sqlHandler abstruct.SqlHandler, query st
 }
 
 func (repos InsertRSSSeedScheduleRepository) Execute(data domain.SeedSchedule) (reference.DBUpdateResponse, utility.IError) {
-	now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
+	now := wrappedbasics.Now()
 
 	nowString := now.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 

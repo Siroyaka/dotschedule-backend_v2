@@ -126,7 +126,7 @@ type IWrappedTime interface {
 	Add(y int, m int, d int, hour int, min int, sec int) IWrappedTime
 }
 
-func Now(localLocations string) WrappedTime {
+func Now() WrappedTime {
 	now := time.Now()
 	return WrappedTime{
 		time: now.UTC(),

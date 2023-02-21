@@ -193,7 +193,7 @@ func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeSche
 		return true
 	}
 
-	now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
+	now := wrappedbasics.Now()
 
 	startDate, err := wrappedbasics.NewWrappedTimeFromUTC(afterScheduleData.PublishDatetime, wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	if err != nil {
@@ -258,7 +258,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 	}
 
 	for _, data := range targetSchedules {
-		now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
+		now := wrappedbasics.Now()
 
 		utility.LogInfo(fmt.Sprintf("target id = %s", data.StreamingID))
 

@@ -41,7 +41,7 @@ func (repos UpdateScheduleStatusTo100Repository) isComplete(scheduleData domain.
 }
 
 func (repos UpdateScheduleStatusTo100Repository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utility.IError) {
-	now := wrappedbasics.Now(wrappedbasics.WrappedTimeProps.LocalLocation())
+	now := wrappedbasics.Now()
 
 	var isCompleteValue int
 	if repos.isComplete(scheduleData, now) {
