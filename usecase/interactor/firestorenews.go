@@ -6,7 +6,6 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamermaster"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
@@ -19,8 +18,7 @@ type FirestoreNewsInteractor struct {
 
 	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool]
 
-	insertFullScheduleRepos fullschedule.InsertRepository
-
+	insertFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse]
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository
@@ -38,8 +36,7 @@ func NewFirestoreNewsInteractor(
 	getFirestoreNewsRepos abstruct.RepositoryRequest[wrappedbasics.IWrappedTime, []domain.FirestoreNews],
 	containsScheduleRepos abstruct.RepositoryRequest[reference.StreamingIDWithPlatformType, bool],
 
-	insertFullScheduleRepos fullschedule.InsertRepository,
-
+	insertFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 	updateFullScheduleRepos abstruct.RepositoryRequest[domain.FullScheduleData, reference.DBUpdateResponse],
 
 	getPlatformIdRepos streamermaster.GetPlatformIdRepository,
@@ -88,10 +85,6 @@ func (intr FirestoreNewsInteractor) firestoreNewsToFullSchedule(data domain.Fire
 
 // dbにすでにデータが存在しているか確認し、存在しているならupdate、存在していないならinsertを行う
 func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData) utility.IError {
-	now, err := intr.common.Now()
-	if err != nil {
-		return err.WrapError()
-	}
 
 	alreadyContains, err := intr.containsScheduleRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID, data.PlatformType))
 	if err != nil {
@@ -107,11 +100,9 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 		}
 	} else {
 		utility.LogInfo(fmt.Sprintf("insert schedule. id: %s", data.StreamingID))
-		insertCount, err := intr.insertFullScheduleRepos.Insert(data, now)
-		if err != nil {
+		if insertResult, err := intr.insertFullScheduleRepos.Execute(data); err != nil {
 			return err.WrapError("schedule data insert error")
-		}
-		if insertCount == 0 {
+		} else if insertResult.Count == 0 {
 			return utility.NewError("schedule data insert count is 0", "")
 		}
 	}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/otheroutbound"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlcontains"
@@ -106,7 +105,7 @@ func main() {
 		queryConfig.Read(config_scheduleCountQuery),
 	)
 
-	ifRepos := fullschedule.NewInsertRepository(
+	ifRepos := sqlrepository.NewInsertFullScheduleRepository(
 		sqlHandler,
 		queryConfig.Read(config_scheduleInsertQuery),
 	)
