@@ -1,12 +1,15 @@
 package domain
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
+)
 
 type ScheduleData struct {
 	StreamerName, StreamerID, StreamerIcon, VideoLink string
 	VideoStatus                                       VideoStatus
 	VideoTitle, Thumbnail                             string
-	StartDate                                         utility.WrappedTime
+	StartDate                                         wrappedbasics.IWrappedTime
 	Duration                                          int
 	ParticipantsList                                  []ParticipantsData
 }
@@ -15,7 +18,7 @@ func NewScheduleData(
 	streamerId, streamerName, videoLink, streamerIcon string,
 	videoStatus int,
 	videoTitle, thumbnail string,
-	startDate utility.WrappedTime,
+	startDate wrappedbasics.IWrappedTime,
 	duration int,
 ) (ScheduleData, utility.IError) {
 	vs, err := NewVideoStatus(videoStatus)

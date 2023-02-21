@@ -6,5 +6,5 @@ import (
 )
 
 type InsertRepository interface {
-	Insert(domain.FullScheduleData, utility.WrappedTime) (int64, utility.IError)
+	Insert(domain.FullScheduleData) (int64, utility.IError)
 }

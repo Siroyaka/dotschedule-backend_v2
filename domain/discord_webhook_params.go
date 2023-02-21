@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type DiscordWebhookParams struct {
@@ -27,8 +28,8 @@ type DiscordWebhookEmbed struct {
 	Description string                    `json:"description"`
 }
 
-func (e *DiscordWebhookEmbed) AddTimeStamp(t utility.WrappedTime) {
-	e.TimeStamp = t.ToUTCFormatString()
+func (e *DiscordWebhookEmbed) AddTimeStamp(t wrappedbasics.IWrappedTime) {
+	e.TimeStamp = t.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 }
 
 type DiscordWebhookEmbedAuthor struct {

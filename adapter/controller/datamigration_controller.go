@@ -3,15 +3,15 @@ package controller
 import (
 	"fmt"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
 type DataMigrationController struct {
-	dataMigrationInteractor usecase.DataMigrationInteractor
+	dataMigrationInteractor interactor.DataMigrationInteractor
 }
 
-func NewDataMigrationController(dataMigrationInteractor usecase.DataMigrationInteractor) DataMigrationController {
+func NewDataMigrationController(dataMigrationInteractor interactor.DataMigrationInteractor) DataMigrationController {
 	return DataMigrationController{
 		dataMigrationInteractor: dataMigrationInteractor,
 	}

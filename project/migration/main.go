@@ -6,12 +6,12 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fileio"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fullschedule"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/migration"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
-	"github.com/Siroyaka/dotschedule-backend_v2/usecase"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -53,13 +53,11 @@ func main() {
 	utility.LoggerStart()
 	wrappedbasics.InitializeWrappedTimeProps()
 
-	publicConfig := config.ReadChild(config_public)
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
 
 	// import
-	common := utility.NewCommon(publicConfig)
 
 	// infrastructure
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
@@ -87,14 +85,13 @@ func main() {
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
 	)
 
-	insertFullScheduleRepos := fullschedule.NewInsertRepository(
+	insertFullScheduleRepos := sqlrepository.NewInsertFullScheduleRepository(
 		sqlHandler,
 		queryConfig.Read(config_insertSchedule),
 	)
 
 	// interactor
-	dataMigrationIntr := usecase.NewDataMigrationInteractor(
-		common,
+	dataMigrationIntr := interactor.NewDataMigrationInteractor(
 		fileReaderRepos,
 		rootConfig.Read(config_dataFileDirectoryPath),
 		rootConfig.Read(config_platformName),

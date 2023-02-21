@@ -6,6 +6,6 @@ import (
 )
 
 type InsertRepository interface {
-	InsertList(streamingId, platformType string, insertAt utility.WrappedTime, memberIdList ...string) (int64, utility.IError)
-	InsertStreamingParticipants(domain.StreamingParticipants, utility.WrappedTime) (int64, utility.IError)
+	InsertList(streamingId, platformType string, memberIdList ...string) (int64, utility.IError)
+	InsertStreamingParticipants(domain.StreamingParticipants) (int64, utility.IError)
 }

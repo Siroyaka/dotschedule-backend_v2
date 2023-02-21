@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/streamingparticipants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
 type InsertRepository struct {
@@ -30,10 +31,13 @@ func NewInsertRepository(
 	}
 }
 
-func (r InsertRepository) insert(streamingId, platform string, insertAt utility.WrappedTime, list []string) (int64, utility.IError) {
+func (r InsertRepository) insert(streamingId, platform string, list []string) (int64, utility.IError) {
 	if len(list) == 0 {
 		return 0, nil
 	}
+
+	insertAt := wrappedbasics.Now().ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
+
 	var replaceCharList []string
 	for range list {
 		replaceCharList = append(replaceCharList, r.replaceChar)
@@ -46,7 +50,7 @@ func (r InsertRepository) insert(streamingId, platform string, insertAt utility.
 	if err != nil {
 		return 0, utility.NewError(err.Error(), utility.ERR_SQL_PREPARE, query)
 	}
-	result, err := stmt.Exec(utility.ToInterfaceSlice(streamingId, insertAt.ToUTCFormatString(), platform, list)...)
+	result, err := stmt.Exec(utility.ToInterfaceSlice(streamingId, insertAt, platform, list)...)
 	if err != nil {
 		return 0, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
 	}
@@ -59,19 +63,19 @@ func (r InsertRepository) insert(streamingId, platform string, insertAt utility.
 
 }
 
-func (r InsertRepository) InsertList(streamingId, platformType string, insertAt utility.WrappedTime, memberIdList ...string) (int64, utility.IError) {
-	result, err := r.insert(streamingId, platformType, insertAt, memberIdList)
+func (r InsertRepository) InsertList(streamingId, platformType string, memberIdList ...string) (int64, utility.IError) {
+	result, err := r.insert(streamingId, platformType, memberIdList)
 	if err != nil {
 		return result, err.WrapError()
 	}
 	return result, nil
 }
 
-func (r InsertRepository) InsertStreamingParticipants(data domain.StreamingParticipants, insertAt utility.WrappedTime) (int64, utility.IError) {
+func (r InsertRepository) InsertStreamingParticipants(data domain.StreamingParticipants) (int64, utility.IError) {
 	if data.IsEmpty() {
 		return 0, nil
 	}
-	result, err := r.insert(data.StreamingID(), data.Platform(), insertAt, data.GetList())
+	result, err := r.insert(data.StreamingID(), data.Platform(), data.GetList())
 	if err != nil {
 		return result, err.WrapError()
 	}
