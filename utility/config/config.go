@@ -1,18 +1,14 @@
-package utility
+package config
 
 import (
-	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
-
-type ConfigData map[string]interface{}
 
 type Config struct {
 	configData ConfigData
 }
 
-func NewConfig(data ConfigData) config.IConfig {
+func New(data map[string]interface{}) IConfig {
 	if data == nil {
 		return Config{make(ConfigData)}
 	}
@@ -26,7 +22,6 @@ func (c Config) Has(key string) bool {
 
 func (c Config) check(k string) {
 	if !c.Has(k) {
-		logger.Fatal(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
 		panic(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
 	}
 }
@@ -83,7 +78,7 @@ func (c Config) ReadBoolean(k string) bool {
 	return result
 }
 
-func (c Config) ReadChild(k string) config.IConfig {
+func (c Config) ReadChild(k string) IConfig {
 	c.check(k)
 	result, err := configRead[map[string]interface{}](c.configData[k])
 	if err != nil {

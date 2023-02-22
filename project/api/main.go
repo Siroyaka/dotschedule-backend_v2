@@ -2,15 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/controller"
-	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository"
+	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/fileio"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/infrastructure"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -46,19 +44,17 @@ func heartBeat(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "ok")
 }
 
-func main() {
-	//confLoader := fileio.NewReaderRepository[config.ConfigData](infrastructure.NewFileReader[config.ConfigData]())
-
-	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
-
-	//configValue, err := confLoader.ReadJson(configPath)
-
-	configValue, err := confLoader.ReadJsonConfig(configPath)
+func loadConfig() config.IConfig {
+	reader := fileio.NewReaderRepository[map[string]interface{}](infrastructure.NewFileReader[map[string]interface{}]())
+	data, err := reader.ReadJson(configPath)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
+	return config.New(data)
+}
 
-	config.Setup(projectName, configValue)
+func main() {
+	config.Setup(projectName, loadConfig())
 
 	logger.Start()
 	wrappedbasics.InitializeWrappedTimeProps()
