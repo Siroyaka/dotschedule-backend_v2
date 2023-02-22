@@ -9,6 +9,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain/apidomain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/apireference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -65,7 +66,7 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 
 	statusNum, err := strconv.Atoi(status)
 	if err != nil {
-		utility.LogError(err)
+		logger.Error(err)
 		return apireference.ScheduleResponse{}, utilerror.New(err.Error(), "")
 	}
 

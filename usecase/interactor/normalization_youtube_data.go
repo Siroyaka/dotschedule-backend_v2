@@ -10,6 +10,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -70,7 +71,7 @@ func (intr NormalizationYoutubeDataInteractor) createStreamerDataMap(list []doma
 	for _, data := range list {
 		v, ok := data.PlatformData[intr.platformType]
 		if !ok {
-			utility.LogError(utilerror.New(fmt.Sprintf("%s has not %s data", data.StreamerID, intr.platformType), ""))
+			logger.Error(utilerror.New(fmt.Sprintf("%s has not %s data", data.StreamerID, intr.platformType), ""))
 			continue
 		}
 		res[v.PlatformID] = data.StreamerMaster
@@ -198,7 +199,7 @@ func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeSche
 
 	startDate, err := wrappedbasics.NewWrappedTimeFromUTC(afterScheduleData.PublishDatetime, wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	if err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 		return false
 	}
 
@@ -208,7 +209,7 @@ func (intr NormalizationYoutubeDataInteractor) isDiscordNortification(beforeSche
 		return false
 	}
 
-	utility.LogDebug(fmt.Sprintf("Discord nortification. { \"title\": \"%s\"}", afterScheduleData.Title))
+	logger.Debug(fmt.Sprintf("Discord nortification. { \"title\": \"%s\"}", afterScheduleData.Title))
 
 	return true
 }
@@ -261,50 +262,50 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 	for _, data := range targetSchedules {
 		now := wrappedbasics.Now()
 
-		utility.LogInfo(fmt.Sprintf("target id = %s", data.StreamingID))
+		logger.Info(fmt.Sprintf("target id = %s", data.StreamingID))
 
 		youtubeVideoData, err := intr.youtubeVideoListAPIRepos.Execute(data.StreamingID)
 		if err != nil {
-			utility.LogError(err.WrapError())
+			logger.Error(err.WrapError())
 			continue
 		}
 
 		if youtubeVideoData.IsEmpty() {
-			utility.LogInfo(fmt.Sprintf("notfound from youtube data api. change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+			logger.Info(fmt.Sprintf("notfound from youtube data api. change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
 
 			if updateResult, err := intr.updateScheduleToStatus100Repos.Execute(data); err != nil {
-				utility.LogError(err.WrapError(fmt.Sprintf("{\"StreamingID\": \"%s\"}", data.StreamingID)))
+				logger.Error(err.WrapError(fmt.Sprintf("{\"StreamingID\": \"%s\"}", data.StreamingID)))
 				continue
 			} else if updateResult.Count == 0 {
-				utility.LogError(utilerror.New(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
+				logger.Error(utilerror.New(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
 				continue
 			}
-			utility.LogInfo(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+			logger.Info(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
 			continue
 		}
 
 		// youtube video data to fullschedule data
 		afterScheduleData, err := intr.makeFullSchedule(youtubeVideoData, data, streamerMasterMap, now)
 		if err != nil {
-			utility.LogError(err.WrapError())
+			logger.Error(err.WrapError())
 			continue
 		}
 
 		if (data.Status == "2" || data.Status == "3") && data.Status == afterScheduleData.Status {
 			// status 2 or 3 ... status not change that not update
-			utility.LogInfo(fmt.Sprintf("data status not change. not update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
+			logger.Info(fmt.Sprintf("data status not change. not update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
 			continue
 		}
 
-		utility.LogInfo(fmt.Sprintf("schedule update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
+		logger.Info(fmt.Sprintf("schedule update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
 
 		updateResult, err := intr.updateScheduleRepos.Execute(afterScheduleData)
 		if err != nil {
-			utility.LogError(err.WrapError())
+			logger.Error(err.WrapError())
 			continue
 		}
 		if updateResult.Count == 0 {
-			utility.LogError(utilerror.New(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
+			logger.Error(utilerror.New(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
 			continue
 		}
 
@@ -312,21 +313,21 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 
 		participantsIdNames, err := intr.getParticipantsRepos.Execute(streamingIdWithPlatformType)
 		if err != nil {
-			utility.LogError(err.WrapError())
+			logger.Error(err.WrapError())
 			continue
 		}
 
 		participantsIdNameMap := dbmodels.KeyValueToMap(participantsIdNames)
 
 		if intr.isParticipantsUpdate(afterScheduleData, participantsIdNameMap) {
-			utility.LogInfo(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
+			logger.Info(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
 
 			participantsSingleInsertData := participants.NewSingleInsertData(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now)
 
 			if response, err := intr.insertParticipantsRepos.Execute(participantsSingleInsertData); err != nil {
-				utility.LogError(err.WrapError())
+				logger.Error(err.WrapError())
 			} else if response.Count == 0 {
-				utility.LogError(utilerror.New(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
+				logger.Error(utilerror.New(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
 			}
 
 		}
@@ -337,7 +338,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 			discordPostData := intr.CreateDiscordPostData(afterScheduleData, participantsIdNameMap)
 
 			if message, err := intr.discordPostRepos.Execute(discordPostData); err != nil {
-				utility.LogError(err.WrapError(message))
+				logger.Error(err.WrapError(message))
 			}
 		}
 

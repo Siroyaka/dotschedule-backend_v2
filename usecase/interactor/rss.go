@@ -9,6 +9,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -84,13 +85,13 @@ func (intr RSSInteractor) feedDataToSeedSchedule(
 	for i := 0; i < feedData.GetItemLength(); i++ {
 		feedItem := feedData.GetItem(i)
 		if feedItem == nil {
-			utility.LogError(utilerror.New(fmt.Sprintf("items out of index. index: %v", i), utilerror.ERR_RSS_PARSE))
+			logger.Error(utilerror.New(fmt.Sprintf("items out of index. index: %v", i), utilerror.ERR_RSS_PARSE))
 			continue
 		}
 
 		feedPublishedAt, err := wrappedbasics.NewWrappedTimeFromUTC(feedItem.GetPublishedAt(), wrappedbasics.WrappedTimeProps.DateTimeFormat())
 		if err != nil {
-			utility.LogError(err.WrapError(fmt.Sprintf("feed updatetime parse error. Title: %s, UpdateTime: %s", feedItem.GetTitle(), feedItem.GetUpdateAt())))
+			logger.Error(err.WrapError(fmt.Sprintf("feed updatetime parse error. Title: %s, UpdateTime: %s", feedItem.GetTitle(), feedItem.GetUpdateAt())))
 			continue
 		}
 
@@ -114,7 +115,7 @@ func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utilerror.IError)
 	}
 	targetMaster := intr.masterList[intr.index]
 
-	utility.LogDebug(fmt.Sprintf("feed request: %s %s", targetMaster.ID, targetMaster.Name))
+	logger.Debug(fmt.Sprintf("feed request: %s %s", targetMaster.ID, targetMaster.Name))
 
 	feedData, err := intr.requestRepository.Execute(targetMaster.Url)
 	if err != nil {
@@ -164,34 +165,34 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 		}
 
 		if result, err := intr.insertScheduleRepository.Execute(seedSchedule); err != nil {
-			utility.LogError(err.WrapError(fmt.Sprintf("schedule insert error. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
+			logger.Error(err.WrapError(fmt.Sprintf("schedule insert error. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
 			isError = true
 			continue
 		} else if result.Count == 0 {
-			utility.LogError(err.WrapError(fmt.Sprintf("schedule insert error. count 0. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
+			logger.Error(err.WrapError(fmt.Sprintf("schedule insert error. count 0. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID())))
 			isError = true
 			continue
 		}
 
-		utility.LogInfo(fmt.Sprintf("schedule insert finished. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID()))
+		logger.Info(fmt.Sprintf("schedule insert finished. name: %s, streaming_id: [ %s ]", master.Name, seedSchedule.GetID()))
 
 		insertCount++
 	}
 
 	if updateList != nil {
 		if result, err := intr.updateScheduleRepository.Execute(reference.NewStreamingIDListWithPlatformID(updateList, intr.platform)); err != nil {
-			utility.LogDebug(err.Error())
+			logger.Debug(err.Error())
 			ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
 			isError = true
 			return
 		} else if result.Count == 0 {
-			utility.LogDebug("test4")
+			logger.Debug("test4")
 			ierr = err.WrapError(fmt.Sprintf("schedule update ERROR. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
 			isError = true
 			return
 		}
 
-		utility.LogInfo(fmt.Sprintf("schedule update finished. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
+		logger.Info(fmt.Sprintf("schedule update finished. name: %s, streaming_id: [ %s ]", master.Name, strings.Join(updateList, ", ")))
 	}
 
 	updateCount = len(updateList)

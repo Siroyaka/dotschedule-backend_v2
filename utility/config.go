@@ -2,6 +2,7 @@ package utility
 
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
@@ -25,7 +26,7 @@ func (c Config) Has(key string) bool {
 
 func (c Config) check(k string) {
 	if !c.Has(k) {
-		LogFatal(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
+		logger.Fatal(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
 		panic(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
 	}
 }

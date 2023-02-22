@@ -5,6 +5,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -33,7 +34,7 @@ func (repos RSSRequestRepository) Execute(url string) (utility.IFeed, utilerror.
 	if err != nil {
 		return nil, err.WrapError()
 	}
-	utility.LogDebug(fmt.Sprintf("http request: {url: %s, status:%s, statusCode:%b}", url, response.Status(), response.StatusCode()))
+	logger.Debug(fmt.Sprintf("http request: {url: %s, status:%s, statusCode:%b}", url, response.Status(), response.StatusCode()))
 
 	feedData, err := repos.converter(response.Body())
 	if err != nil {

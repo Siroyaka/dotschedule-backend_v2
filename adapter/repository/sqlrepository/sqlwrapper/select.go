@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
@@ -45,7 +45,7 @@ func (repos SelectWrapper[X]) Select(scanable Scanable[X]) ([]X, utilerror.IErro
 		res, err := scanable(rows)
 
 		if err != nil {
-			utility.LogError(err)
+			logger.Error(err)
 			rowsErrCount++
 			continue
 		}
@@ -78,7 +78,7 @@ func (repos SelectWrapper[X]) SelectPrepare(scanable Scanable[X], data ...interf
 	for rows.Next() {
 		res, err := scanable(rows)
 		if err != nil {
-			utility.LogError(err)
+			logger.Error(err)
 			rowsErrCount++
 			continue
 		}

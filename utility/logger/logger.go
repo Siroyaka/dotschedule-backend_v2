@@ -1,4 +1,4 @@
-package utility
+package logger
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ var (
 	logIsSwitch = defaultLogSwitch
 )
 
-func loadLoggerConfig() config.IConfig {
+func loadConfig() config.IConfig {
 	if projectConfig := config.ReadProjectConfig(); projectConfig != nil && projectConfig.Has(logConfigParent) {
 		return projectConfig.ReadChild(logConfigParent)
 	}
@@ -99,7 +99,7 @@ func makeLogFilePath(logDir, logName, logSuffix string) string {
 	}
 
 	if f, err := os.Stat(logDir); os.IsNotExist(err) || !f.IsDir() {
-		LogError(utilerror.New(err.Error(), ""))
+		Error(utilerror.New(err.Error(), ""))
 		return ""
 	}
 
@@ -120,7 +120,7 @@ func loggerSwitch() {
 		return
 	}
 
-	loggerConfig := loadLoggerConfig()
+	loggerConfig := loadConfig()
 	if loggerConfig == nil {
 		return
 	}
@@ -146,7 +146,7 @@ func loggerSwitch() {
 
 	err := loggerSetup(logFilePath, isOsOutput)
 	if err != nil {
-		LogFatal(err.WrapError())
+		Fatal(err.WrapError())
 		return
 	}
 }
@@ -175,8 +175,8 @@ func defaultLoggerSetup() {
 	loggerSetup(logFilePath, defaultLogOSOutput)
 }
 
-func LoggerStart() {
-	loggerConfig := loadLoggerConfig()
+func Start() {
+	loggerConfig := loadConfig()
 
 	if loggerConfig == nil {
 		defaultLoggerSetup()
@@ -203,7 +203,7 @@ func LoggerStart() {
 	}
 }
 
-func LogDebug(msg string) {
+func Debug(msg string) {
 	if !mode.DEBUG {
 		return
 	}
@@ -212,17 +212,17 @@ func LogDebug(msg string) {
 	log.Printf("DEBUG\t%s\n", msg)
 }
 
-func LogInfo(msg string) {
+func Info(msg string) {
 	loggerSwitch()
 	log.Printf("INFO\t%s\n", msg)
 }
 
-func LogError(err error) {
+func Error(err error) {
 	loggerSwitch()
 	log.Printf("ERROR\t%s\n", err)
 }
 
-func LogFatal(err error) {
+func Fatal(err error) {
 	loggerSwitch()
 	log.Printf("FATAL\t%s\n", err)
 }

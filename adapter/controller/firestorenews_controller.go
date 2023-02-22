@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 )
 
 type FirestoreNewsController struct {
@@ -18,12 +18,12 @@ func NewFirestoreNewsController(firestoreNewsIntr interactor.FirestoreNewsIntera
 func (controller FirestoreNewsController) Exec() {
 	firestoreData, err := controller.firestoreNewsIntr.DataFetchFromFirestore()
 	if err != nil {
-		utility.LogFatal(err.WrapError())
+		logger.Fatal(err.WrapError())
 		return
 	}
 
 	if len(firestoreData) == 0 {
-		utility.LogDebug("firestoreNews no data")
+		logger.Debug("firestoreNews no data")
 		return
 	}
 

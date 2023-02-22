@@ -7,7 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
@@ -47,7 +47,7 @@ func (repos UpdateScheduleStatusTo100Repository) Execute(scheduleData domain.Ful
 	var isCompleteValue int
 	if repos.isComplete(scheduleData, now) {
 		isCompleteValue = 1
-		utility.LogDebug("100 status schedule is complete.")
+		logger.Debug("100 status schedule is complete.")
 	} else {
 		isCompleteValue = 0
 	}

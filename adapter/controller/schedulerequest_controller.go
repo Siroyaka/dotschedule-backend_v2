@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -37,21 +37,21 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 	fromDate, err := wrappedbasics.NewWrappedTimeFromLocal(date, wrappedbasics.WrappedTimeProps.DateFormat())
 
 	if err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Invalid Date Format. RequestString: %s", date)
-		utility.LogInfo(fmt.Sprintf("Invalid Date Format. RequestString: %s", date))
+		logger.Info(fmt.Sprintf("Invalid Date Format. RequestString: %s", date))
 		return
 	}
 
 	toDate := fromDate.Add(0, 0, 1, 0, 0, 0)
 
-	utility.LogInfo(fmt.Sprintf("Schedule Request. Date: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateFormat())))
+	logger.Info(fmt.Sprintf("Schedule Request. Date: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateFormat())))
 
 	list, err := c.scheduleIntr.GetScheduleData(fromDate, toDate)
 
 	if err != nil {
-		utility.LogFatal(err.WrapError())
+		logger.Fatal(err.WrapError())
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Data Fetch Error: %s", date)
 		//c.loggerInteractor.Fatal(fmt.Sprintf("Data fetch error: %s", date), err, 1)
@@ -61,7 +61,7 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 	json, err := c.scheduleIntr.ToJson(list)
 
 	if err != nil {
-		utility.LogFatal(err.WrapError())
+		logger.Fatal(err.WrapError())
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Data Fetch Error: %s", date)
 		//c.loggerInteractor.Fatal(fmt.Sprintf("Json convert error: %s", date), err, 1)

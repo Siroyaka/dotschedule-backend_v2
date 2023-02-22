@@ -3,6 +3,7 @@ package otheroutbound
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 
@@ -103,13 +104,13 @@ func (repos GetFirestoreNewsRepository) Execute(
 
 		videoId, videoStatus, updateAt, participants, err := repos.parseFirestoreData(dataMap)
 		if err != nil {
-			utility.LogError(err)
+			logger.Error(err)
 			continue
 		}
 
 		data, err := repos.converter(videoId, videoStatus, updateAt, participants)
 		if err != nil {
-			utility.LogError(err.WrapError("convert"))
+			logger.Error(err.WrapError("convert"))
 			continue
 		}
 		responseData = append(responseData, data)

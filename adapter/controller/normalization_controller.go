@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 )
 
 type NormalizationController struct {
@@ -18,9 +18,9 @@ func NewNormalizationController(
 }
 
 func (controller NormalizationController) Execute() {
-	utility.LogInfo("Start Normalization")
+	logger.Info("Start Normalization")
 	if err := controller.intr.Normalization(); err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 	}
-	utility.LogInfo("End Normalization")
+	logger.Info("End Normalization")
 }

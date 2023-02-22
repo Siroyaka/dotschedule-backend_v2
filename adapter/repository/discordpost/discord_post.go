@@ -5,7 +5,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
@@ -37,14 +37,14 @@ func (repos DiscordPostRepository) Execute(param domain.DiscordWebhookParams) (s
 		contentType: contentType,
 	}
 
-	utility.LogDebug(fmt.Sprintf("Discord Post content: %s", content))
+	logger.Debug(fmt.Sprintf("Discord Post content: %s", content))
 
 	res, err := repos.request.Post(postParam)
 	if err != nil {
 		return "Request Post Error", err.WrapError()
 	}
 
-	utility.LogDebug(fmt.Sprintf("Discord Post Status: %s, Response: %s", res.Status(), res.Body()))
+	logger.Debug(fmt.Sprintf("Discord Post Status: %s, Response: %s", res.Status(), res.Body()))
 
 	return "", nil
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -61,20 +61,20 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 	fromDate, err := wrappedbasics.NewWrappedTimeFromLocal(month, wrappedbasics.WrappedTimeProps.MonthFormat())
 
 	if err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Invalid Month Format. %s", month)
 		return
 	}
 
-	utility.LogInfo(fmt.Sprintf("Month Request. month: %s", month))
+	logger.Info(fmt.Sprintf("Month Request. month: %s", month))
 
 	toDate := c.monthAdd(fromDate, 1)
 
 	list, err := c.monthInteractor.GetMonthData(fromDate, toDate)
 
 	if err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Data Fetch Error: %s", month)
 		return
@@ -85,7 +85,7 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 	json, err := d.ToJson()
 
 	if err != nil {
-		utility.LogError(err.WrapError())
+		logger.Error(err.WrapError())
 		//c.loggerInteractor.Fatal(fmt.Sprintf("Json convert error: %s", month), err, 0)
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Data Fetch Error: %s", month)

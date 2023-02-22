@@ -13,6 +13,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -63,7 +64,7 @@ func main() {
 
 	config.Setup(projectName, configValue)
 
-	utility.LoggerStart()
+	logger.Start()
 
 	wrappedbasics.InitializeWrappedTimeProps()
 

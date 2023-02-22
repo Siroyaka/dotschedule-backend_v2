@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
@@ -40,7 +40,7 @@ type WrappedTimePropsStruct struct {
 
 func InitializeWrappedTimeProps() {
 	if !config.Has(wrappedTimeConfigKey) {
-		utility.LogInfo("Wrapped time config not found.")
+		logger.Info("Wrapped time config not found.")
 		return
 	}
 	timeConfig := config.ReadChild("WRAPPED_TIME")
@@ -48,25 +48,25 @@ func InitializeWrappedTimeProps() {
 	if timeConfig.Has(localLocationConfigKey) {
 		WrappedTimeProps.localLocation = timeConfig.Read(localLocationConfigKey)
 	} else {
-		utility.LogInfo("local location use default.")
+		logger.Info("local location use default.")
 	}
 
 	if timeConfig.Has(datetimeFormatConfigKey) {
 		WrappedTimeProps.datetimeFormat = WrappedTimeFormat(timeConfig.Read(datetimeFormatConfigKey))
 	} else {
-		utility.LogInfo("datetime format use default.")
+		logger.Info("datetime format use default.")
 	}
 
 	if timeConfig.Has(dateFormatConfigKey) {
 		WrappedTimeProps.dateFormat = WrappedTimeFormat(timeConfig.Read(dateFormatConfigKey))
 	} else {
-		utility.LogInfo("date format use default.")
+		logger.Info("date format use default.")
 	}
 
 	if timeConfig.Has(monthFormatConfigKey) {
 		WrappedTimeProps.monthFormat = WrappedTimeFormat(timeConfig.Read(monthFormatConfigKey))
 	} else {
-		utility.LogInfo("month format use default.")
+		logger.Info("month format use default.")
 	}
 
 	if timeConfig.Has(otherFormatTypesConfigKey) && timeConfig.Has(otherFormatsConfigKey) {
@@ -75,11 +75,11 @@ func InitializeWrappedTimeProps() {
 			if otherFormatsConfig.Has(key) {
 				WrappedTimeProps.otherFormats[key] = WrappedTimeFormat(otherFormatsConfig.Read(key))
 			} else {
-				utility.LogInfo(fmt.Sprintf("original format %s is not found.", key))
+				logger.Info(fmt.Sprintf("original format %s is not found.", key))
 			}
 		}
 	} else {
-		utility.LogInfo("other format nothing.")
+		logger.Info("other format nothing.")
 	}
 }
 
@@ -103,7 +103,7 @@ func (wtp WrappedTimePropsStruct) OtherFormats(key string) WrappedTimeFormat {
 	if v, ok := wtp.otherFormats[key]; ok {
 		return v
 	}
-	utility.LogInfo(fmt.Sprintf("Format %s is NotFound.", key))
+	logger.Info(fmt.Sprintf("Format %s is NotFound.", key))
 	return time.RFC3339
 }
 
