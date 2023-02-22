@@ -11,13 +11,7 @@ import (
 )
 
 const (
-	EmptyString = ""
-
-	replaceConst        = "@@"
-	config_timeFormat   = "TIME_FORMAT"
-	config_dateFormat   = "DATE_FORMAT"
-	config_monthFormat  = "MONTH_FORMAT"
-	config_timeLocation = "LOCAL_LOCATION"
+	replaceConst = "@@"
 )
 
 func ReplaceConstString(src, repl, target string) string {
