@@ -6,11 +6,12 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 )
 
-type FileIO interface {
+type FileInfo interface {
 	ReadFile(string) (string, utility.IError)
 	ReadFileLine(string) ([]string, utility.IError)
 	Any(string) bool
 	FileList(string) ([]string, utility.IError)
+	IsDirectory(string) bool
 }
 
 type FileReader[X any] interface {

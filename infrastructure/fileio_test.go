@@ -7,7 +7,7 @@ import (
 )
 
 func TestFileList(t *testing.T) {
-	io := infrastructure.NewFileIO()
+	io := infrastructure.NewFileInfo()
 	list, err := io.FileList("./")
 	if err != nil {
 		t.Error(err)

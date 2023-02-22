@@ -45,7 +45,6 @@ func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus in
 		participantsList = append(participantsList, k)
 	}
 
-	// update at convert to wrapped time. need common.
 	updateAtTime, err := wrappedbasics.NewWrappedTimeFromLocal(updateAt, wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	if err != nil {
 		return domain.FirestoreNews{}, err.WrapError()
