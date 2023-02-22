@@ -92,7 +92,7 @@ func TestRSSItemLen(t *testing.T) {
 		item := feed.GetItem(i)
 		fmt.Println(item.GetTitle())
 		title, value, _ := item.GetExtension("yt", "videoId")
-		t.Log(fmt.Sprintf("title:%s value:%s", title, value))
+		t.Logf("title:%s value:%s", title, value)
 		fmt.Println(item.GetUpdateAt())
 	}
 }
