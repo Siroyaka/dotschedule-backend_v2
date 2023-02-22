@@ -3,7 +3,7 @@ package domain
 import (
 	"encoding/json"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -12,10 +12,10 @@ type DiscordWebhookParams struct {
 	Embeds  []DiscordWebhookEmbed `json:"embeds"`
 }
 
-func (p DiscordWebhookParams) ToJson() (string, utility.IError) {
+func (p DiscordWebhookParams) ToJson() (string, utilerror.IError) {
 	responseJson, err := json.Marshal(p)
 	if err != nil {
-		return "", utility.NewError(err.Error(), utility.ERR_JSONPARSE)
+		return "", utilerror.New(err.Error(), utilerror.ERR_JSONPARSE)
 	}
 	return string(responseJson), nil
 }

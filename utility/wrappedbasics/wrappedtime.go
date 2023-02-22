@@ -6,6 +6,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 const (
@@ -133,28 +134,28 @@ func Now() WrappedTime {
 	}
 }
 
-func NewWrappedTimeFromUTC(t string, baseFormat WrappedTimeFormat) (WrappedTime, utility.IError) {
+func NewWrappedTimeFromUTC(t string, baseFormat WrappedTimeFormat) (WrappedTime, utilerror.IError) {
 	tz, err := time.LoadLocation(utcLocation)
 	if err != nil {
-		return WrappedTime{}, utility.NewError(err.Error(), utility.ERR_LOAD_TIMELOCATION, utcLocation)
+		return WrappedTime{}, utilerror.New(err.Error(), utilerror.ERR_LOAD_TIMELOCATION, utcLocation)
 	}
 	localTime, err := time.ParseInLocation(baseFormat.toString(), t, tz)
 	if err != nil {
-		return WrappedTime{}, utility.NewError(err.Error(), utility.ERR_LOAD_TIMELOCATION, t, utcLocation, baseFormat.toString())
+		return WrappedTime{}, utilerror.New(err.Error(), utilerror.ERR_LOAD_TIMELOCATION, t, utcLocation, baseFormat.toString())
 	}
 	return WrappedTime{
 		time: localTime.UTC(),
 	}, nil
 }
 
-func NewWrappedTimeFromLocal(t string, baseFormat WrappedTimeFormat) (WrappedTime, utility.IError) {
+func NewWrappedTimeFromLocal(t string, baseFormat WrappedTimeFormat) (WrappedTime, utilerror.IError) {
 	tz, err := time.LoadLocation(WrappedTimeProps.localLocation)
 	if err != nil {
-		return WrappedTime{}, utility.NewError(err.Error(), utility.ERR_LOAD_TIMELOCATION, WrappedTimeProps.localLocation)
+		return WrappedTime{}, utilerror.New(err.Error(), utilerror.ERR_LOAD_TIMELOCATION, WrappedTimeProps.localLocation)
 	}
 	localTime, err := time.ParseInLocation(baseFormat.toString(), t, tz)
 	if err != nil {
-		return WrappedTime{}, utility.NewError(err.Error(), utility.ERR_LOAD_TIMELOCATION, t, WrappedTimeProps.localLocation, baseFormat.toString())
+		return WrappedTime{}, utilerror.New(err.Error(), utilerror.ERR_LOAD_TIMELOCATION, t, WrappedTimeProps.localLocation, baseFormat.toString())
 	}
 	return WrappedTime{
 		time: localTime.UTC(),

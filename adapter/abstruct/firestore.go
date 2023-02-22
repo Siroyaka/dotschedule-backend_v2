@@ -3,12 +3,12 @@ package abstruct
 import (
 	"context"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type Firestore interface {
 	Collection(string) FirestoreQuery
-	Close() utility.IError
+	Close() utilerror.IError
 	GetContext() GCPContext
 }
 
@@ -29,7 +29,7 @@ type FirestoreQuery interface {
 }
 
 type DocumentIterator interface {
-	Next() (bool, FirestoreDocumentSnapshop, utility.IError)
+	Next() (bool, FirestoreDocumentSnapshop, utilerror.IError)
 	Stop()
 }
 

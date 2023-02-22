@@ -46,7 +46,11 @@ func heartBeat(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	//confLoader := fileio.NewReaderRepository[config.ConfigData](infrastructure.NewFileReader[config.ConfigData]())
+
 	confLoader := repository.NewConfigLoader(infrastructure.NewFileReader[utility.ConfigData]())
+
+	//configValue, err := confLoader.ReadJson(configPath)
 
 	configValue, err := confLoader.ReadJsonConfig(configPath)
 	if err != nil {

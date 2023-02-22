@@ -5,7 +5,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -19,7 +19,7 @@ func NewUpdateScheduleCompleteStatusRepository(sqlHandler abstruct.SqlHandler, q
 	}
 }
 
-func (repos UpdateScheduleCompleteStatusRepository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utility.IError) {
+func (repos UpdateScheduleCompleteStatusRepository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utilerror.IError) {
 	updateAt := wrappedbasics.Now().ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	count, id, err := repos.updateWrapper.UpdatePrepare(updateAt, scheduleData.IsCompleteData, scheduleData.StreamingID, scheduleData.PlatformType)
 

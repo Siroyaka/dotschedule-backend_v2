@@ -3,7 +3,7 @@ package youtubedataapiwrapper
 import (
 	abstructYoutube "github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type VideoListWrapper struct {
@@ -52,7 +52,7 @@ func convertContentDetails(contentDetails abstructYoutube.ContentDetails) domain
 	)
 }
 
-func (repos VideoListWrapper) IdSearch(part, idList []string) ([]domain.YoutubeVideoData, utility.IError) {
+func (repos VideoListWrapper) IdSearch(part, idList []string) ([]domain.YoutubeVideoData, utilerror.IError) {
 	var resList []domain.YoutubeVideoData
 	if len(part) == 0 || len(idList) == 0 {
 		return resList, nil
@@ -60,7 +60,7 @@ func (repos VideoListWrapper) IdSearch(part, idList []string) ([]domain.YoutubeV
 
 	videoData, err := repos.api.VideosList(part...).Id(idList...).Do()
 	if err != nil {
-		return resList, utility.NewError(err.Error(), "")
+		return resList, utilerror.New(err.Error(), "")
 	}
 
 	for {

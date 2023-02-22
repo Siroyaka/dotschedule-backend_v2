@@ -8,6 +8,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type DeleteParticipantsRepository struct {
@@ -34,7 +35,7 @@ func NewDeleteParticipantsRepository(
 	}
 }
 
-func (repos DeleteParticipantsRepository) Execute(data domain.StreamingParticipants) (reference.DBUpdateResponse, utility.IError) {
+func (repos DeleteParticipantsRepository) Execute(data domain.StreamingParticipants) (reference.DBUpdateResponse, utilerror.IError) {
 	var replacedCharList []string
 	for range data.GetList() {
 		replacedCharList = append(replacedCharList, repos.replacedChar)

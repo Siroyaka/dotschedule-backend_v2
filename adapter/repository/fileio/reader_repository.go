@@ -4,6 +4,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct/fileio"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type ReaderRepository[X any] struct {
@@ -16,7 +17,7 @@ func NewReaderRepository[X any](reader abstruct.FileReader[X]) fileio.ReaderRepo
 	}
 }
 
-func (repos ReaderRepository[X]) FileList(dirPath string) ([]string, utility.IError) {
+func (repos ReaderRepository[X]) FileList(dirPath string) ([]string, utilerror.IError) {
 	nameList, err := repos.reader.FileList(dirPath)
 	if err != nil {
 		return []string{}, err.WrapError()
@@ -24,7 +25,7 @@ func (repos ReaderRepository[X]) FileList(dirPath string) ([]string, utility.IEr
 	return nameList, nil
 }
 
-func (repos ReaderRepository[X]) ReadJson(filePath string) (result X, err utility.IError) {
+func (repos ReaderRepository[X]) ReadJson(filePath string) (result X, err utilerror.IError) {
 	data, err := repos.reader.Read(filePath, utility.JsonDecode[X])
 	if err != nil {
 		err = err.WrapError()

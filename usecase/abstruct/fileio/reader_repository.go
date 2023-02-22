@@ -1,10 +1,8 @@
 package fileio
 
-import (
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
-)
+import "github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 
 type ReaderRepository[X any] interface {
-	FileList(string) ([]string, utility.IError)
-	ReadJson(string) (X, utility.IError)
+	FileList(string) ([]string, utilerror.IError)
+	ReadJson(string) (X, utilerror.IError)
 }

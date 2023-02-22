@@ -5,7 +5,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -22,7 +22,7 @@ func NewInsertFullScheduleRepository(
 	}
 }
 
-func (repos InsertFullScheduleRepository) Execute(data domain.FullScheduleData) (reference.DBUpdateResponse, utility.IError) {
+func (repos InsertFullScheduleRepository) Execute(data domain.FullScheduleData) (reference.DBUpdateResponse, utilerror.IError) {
 	insertAt := wrappedbasics.Now().ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 
 	count, id, err := repos.updateWrapper.UpdatePrepare(
@@ -43,7 +43,7 @@ func (repos InsertFullScheduleRepository) Execute(data domain.FullScheduleData) 
 		data.IsCompleteData,
 	)
 	if err != nil {
-		return reference.DBUpdateResponse{}, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return reference.DBUpdateResponse{}, utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 
 	res := reference.DBUpdateResponse{

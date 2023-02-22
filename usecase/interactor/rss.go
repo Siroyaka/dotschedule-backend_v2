@@ -9,6 +9,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -61,7 +62,7 @@ func NewRSSInteractor(
 	return intr
 }
 
-func (intr *RSSInteractor) GetMaster() utility.IError {
+func (intr *RSSInteractor) GetMaster() utilerror.IError {
 	list, err := intr.getMasterRepository.Execute(reference.Void())
 	intr.masterList = list
 	return err
@@ -83,7 +84,7 @@ func (intr RSSInteractor) feedDataToSeedSchedule(
 	for i := 0; i < feedData.GetItemLength(); i++ {
 		feedItem := feedData.GetItem(i)
 		if feedItem == nil {
-			utility.LogError(utility.NewError(fmt.Sprintf("items out of index. index: %v", i), utility.ERR_RSS_PARSE))
+			utility.LogError(utilerror.New(fmt.Sprintf("items out of index. index: %v", i), utilerror.ERR_RSS_PARSE))
 			continue
 		}
 
@@ -107,9 +108,9 @@ func (intr RSSInteractor) feedDataToSeedSchedule(
 	return seedScheduleList
 }
 
-func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utility.IError) {
+func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utilerror.IError) {
 	if len(intr.masterList) <= intr.index {
-		return nil, utility.NewError("", utility.ERR_OUTOFINDEX, "ri.masterList", strconv.Itoa(len(intr.masterList)), strconv.Itoa(intr.index))
+		return nil, utilerror.New("", utilerror.ERR_OUTOFINDEX, "ri.masterList", strconv.Itoa(len(intr.masterList)), strconv.Itoa(intr.index))
 	}
 	targetMaster := intr.masterList[intr.index]
 
@@ -132,7 +133,7 @@ func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utility.IError) {
 	return list, nil
 }
 
-func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt wrappedbasics.WrappedTime, ierr utility.IError) {
+func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt wrappedbasics.WrappedTime, ierr utilerror.IError) {
 	var idList []string
 	isError = false
 
@@ -198,7 +199,7 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 	return
 }
 
-func (intr RSSInteractor) EndRow(updateAt wrappedbasics.WrappedTime) utility.IError {
+func (intr RSSInteractor) EndRow(updateAt wrappedbasics.WrappedTime) utilerror.IError {
 	master := intr.masterList[intr.index]
 
 	// マスターの更新日付より後の日付が渡されたら更新する
@@ -207,7 +208,7 @@ func (intr RSSInteractor) EndRow(updateAt wrappedbasics.WrappedTime) utility.IEr
 		if result, err := intr.updateMasterRepository.Execute(updateData); err != nil {
 			return err.WrapError()
 		} else if result.Count == 0 {
-			return utility.NewError("RSS Master Update Error. Update Count 0.", "")
+			return utilerror.New("RSS Master Update Error. Update Count 0.", "")
 		}
 		return nil
 	}

@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type FileReader[X any] struct {
@@ -16,11 +16,11 @@ func NewFileReader[X any]() FileReader[X] {
 	return FileReader[X]{}
 }
 
-func (fr FileReader[X]) Read(filePath string, f func(io.Reader) (X, utility.IError)) (data X, ierr utility.IError) {
+func (fr FileReader[X]) Read(filePath string, f func(io.Reader) (X, utilerror.IError)) (data X, ierr utilerror.IError) {
 	osFile, err := os.Open(filePath)
 	defer osFile.Close()
 	if err != nil {
-		ierr = utility.NewError(err.Error(), utility.ERR_FILE_READ, filePath)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_FILE_READ, filePath)
 		return
 	}
 	data, ierr = f(osFile)
@@ -32,19 +32,19 @@ func (fr FileReader[X]) Read(filePath string, f func(io.Reader) (X, utility.IErr
 	return
 }
 
-func (fr FileReader[X]) FileList(dirPath string) (list []string, ierr utility.IError) {
+func (fr FileReader[X]) FileList(dirPath string) (list []string, ierr utilerror.IError) {
 	f, err := os.Stat(dirPath)
 	if err != nil {
-		ierr = utility.NewError(err.Error(), utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	if !f.IsDir() {
-		ierr = utility.NewError("there is not directory", utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New("there is not directory", utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	items, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		ierr = utility.NewError(err.Error(), utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	for _, item := range items {
@@ -78,19 +78,19 @@ func (io FileInfo) Any(path string) bool {
 	return true
 }
 
-func (io FileInfo) FileList(dirPath string) (list []string, ierr utility.IError) {
+func (io FileInfo) FileList(dirPath string) (list []string, ierr utilerror.IError) {
 	f, err := os.Stat(dirPath)
 	if err != nil {
-		ierr = utility.NewError(err.Error(), utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	if !f.IsDir() {
-		ierr = utility.NewError("there is not directory", utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New("there is not directory", utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	items, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		ierr = utility.NewError(err.Error(), utility.ERR_DIRECTORY_READ, dirPath)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_DIRECTORY_READ, dirPath)
 		return
 	}
 	for _, item := range items {
@@ -102,26 +102,26 @@ func (io FileInfo) FileList(dirPath string) (list []string, ierr utility.IError)
 	return
 }
 
-func (io FileInfo) ReadFile(filePath string) (string, utility.IError) {
+func (io FileInfo) ReadFile(filePath string) (string, utilerror.IError) {
 	osFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return "", utility.NewError(err.Error(), utility.ERR_FILE_READ, filePath)
+		return "", utilerror.New(err.Error(), utilerror.ERR_FILE_READ, filePath)
 	}
 
 	return string(osFile), nil
 }
 
-func (io FileInfo) ReadFileLine(filePath string) ([]string, utility.IError) {
+func (io FileInfo) ReadFileLine(filePath string) ([]string, utilerror.IError) {
 	f, err := os.Open(filePath)
 	defer f.Close()
 	if err != nil {
-		return []string{}, utility.NewError(err.Error(), utility.ERR_FILE_READ, filePath)
+		return []string{}, utilerror.New(err.Error(), utilerror.ERR_FILE_READ, filePath)
 	}
 	res := []string{}
 	fr := bufio.NewScanner(f)
 	err = fr.Err()
 	if err != nil {
-		return []string{}, utility.NewError(err.Error(), utility.ERR_FILE_READ, filePath)
+		return []string{}, utilerror.New(err.Error(), utilerror.ERR_FILE_READ, filePath)
 	}
 	for fr.Scan() {
 		res = append(res, fr.Text())

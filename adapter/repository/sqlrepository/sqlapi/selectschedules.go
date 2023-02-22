@@ -9,6 +9,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain/apidomain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/apireference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -28,7 +29,7 @@ func NewSelectSchedulesRepository(
 	}
 }
 
-func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.ScheduleResponse, utility.IError) {
+func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.ScheduleResponse, utilerror.IError) {
 	var streaming_id string
 	var url string
 	var platform string
@@ -59,13 +60,13 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 		&streamer_link,
 		&participants_data,
 	); err != nil {
-		return apireference.ScheduleResponse{}, utility.NewError(err.Error(), "")
+		return apireference.ScheduleResponse{}, utilerror.New(err.Error(), "")
 	}
 
 	statusNum, err := strconv.Atoi(status)
 	if err != nil {
 		utility.LogError(err)
-		return apireference.ScheduleResponse{}, utility.NewError(err.Error(), "")
+		return apireference.ScheduleResponse{}, utilerror.New(err.Error(), "")
 	}
 
 	startDate, ierr := wrappedbasics.NewWrappedTimeFromUTC(publish_datetime, wrappedbasics.WrappedTimeProps.DateTimeFormat())
@@ -107,7 +108,7 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 	}, nil
 }
 
-func (repos SelectSchedulesRepository) Execute(date apireference.FromToDate) ([]apireference.ScheduleResponse, utility.IError) {
+func (repos SelectSchedulesRepository) Execute(date apireference.FromToDate) ([]apireference.ScheduleResponse, utilerror.IError) {
 	dateFrom := date.From.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	dateTo := date.To.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	result, err := repos.selectWrapper.SelectPrepare(repos.scan, dateFrom, dateTo, repos.viewStatus)

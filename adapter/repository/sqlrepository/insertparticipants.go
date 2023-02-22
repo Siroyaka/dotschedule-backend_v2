@@ -8,6 +8,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -32,7 +33,7 @@ func NewInsertParticipantsRepository(
 	}
 }
 
-func (repos InsertParticipantsRepository) Execute(data domain.StreamingParticipants) (reference.DBUpdateResponse, utility.IError) {
+func (repos InsertParticipantsRepository) Execute(data domain.StreamingParticipants) (reference.DBUpdateResponse, utilerror.IError) {
 	insertAt := wrappedbasics.Now().ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 
 	var replaceCharList []string
@@ -48,7 +49,7 @@ func (repos InsertParticipantsRepository) Execute(data domain.StreamingParticipa
 
 	count, id, err := repos.updateWrapper.UpdatePrepare(utility.ToInterfaceSlice(data.StreamingID(), insertAt, data.Platform(), data.GetList())...)
 	if err != nil {
-		return reference.DBUpdateResponse{}, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return reference.DBUpdateResponse{}, utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 
 	return reference.DBUpdateResponse{

@@ -8,6 +8,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -40,7 +41,7 @@ func (repos UpdateScheduleStatusTo100Repository) isComplete(scheduleData domain.
 	return scheduleInsertAt.Before(completeDateLine)
 }
 
-func (repos UpdateScheduleStatusTo100Repository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utility.IError) {
+func (repos UpdateScheduleStatusTo100Repository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utilerror.IError) {
 	now := wrappedbasics.Now()
 
 	var isCompleteValue int
@@ -64,7 +65,7 @@ func (repos UpdateScheduleStatusTo100Repository) Execute(scheduleData domain.Ful
 		return reference.DBUpdateResponse{}, err.WrapError("status update to 100 failed")
 	}
 	if count == 0 {
-		return reference.DBUpdateResponse{Count: 0, Id: 0}, utility.NewError("status update to 100 failed", "")
+		return reference.DBUpdateResponse{Count: 0, Id: 0}, utilerror.New("status update to 100 failed", "")
 	}
 
 	return reference.DBUpdateResponse{Count: count, Id: id}, nil

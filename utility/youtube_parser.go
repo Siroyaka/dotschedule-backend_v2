@@ -3,12 +3,14 @@ package utility
 import (
 	"strconv"
 	"strings"
+
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type YoutubeDurationParser struct {
 	hourSplitter, miniteSplitter, secondSplitter string
 	hour, minite, second                         int
-	err                                          IError
+	err                                          utilerror.IError
 }
 
 func NewYoutubeDurationParser(hourSplitter, miniteSplitter, secondSplitter string) YoutubeDurationParser {
@@ -39,7 +41,7 @@ func (parser YoutubeDurationParser) GetTotalSeconds() int {
 	return (parser.hour*60+parser.minite)*60 + parser.second
 }
 
-func (parser YoutubeDurationParser) Err() IError {
+func (parser YoutubeDurationParser) Err() utilerror.IError {
 	return parser.err
 }
 

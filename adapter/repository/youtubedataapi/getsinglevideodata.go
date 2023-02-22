@@ -4,7 +4,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct/youtubedataapi"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/youtubedataapi/youtubedataapiwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type GetSingleVideoDataRepository struct {
@@ -19,7 +19,7 @@ func NewGetSingleVideoDataRepository(api youtubedataapi.API, partList []string) 
 	}
 }
 
-func (repos GetSingleVideoDataRepository) Execute(streamingId string) (domain.YoutubeVideoData, utility.IError) {
+func (repos GetSingleVideoDataRepository) Execute(streamingId string) (domain.YoutubeVideoData, utilerror.IError) {
 	videoDataList, err := repos.wrapper.IdSearch(repos.part, []string{streamingId})
 
 	if err != nil {

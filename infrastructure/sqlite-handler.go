@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -74,7 +74,7 @@ type SqliteStmt struct {
 func (stmt *SqliteStmt) Query(values ...any) (abstruct.SqlRows, error) {
 	rows, err := stmt.stmt.Query(values...)
 	if err != nil {
-		return nil, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return nil, utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 	return rows, nil
 }
@@ -82,7 +82,7 @@ func (stmt *SqliteStmt) Query(values ...any) (abstruct.SqlRows, error) {
 func (stmt *SqliteStmt) Exec(values ...any) (abstruct.SqlResult, error) {
 	result, err := stmt.stmt.Exec(values...)
 	if err != nil {
-		return nil, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return nil, utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 	return result, nil
 }

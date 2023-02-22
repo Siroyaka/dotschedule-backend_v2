@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"cloud.google.com/go/firestore"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	gcp_context "golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -28,10 +28,10 @@ func NewFirestore(credentialsFilePath string, projectID string) abstruct.Firesto
 	}
 }
 
-func (fs Firestore) Close() utility.IError {
+func (fs Firestore) Close() utilerror.IError {
 	err := fs.client.Close()
 	if err != nil {
-		return utility.NewError(err.Error(), "")
+		return utilerror.New(err.Error(), "")
 	}
 	return nil
 }
@@ -110,13 +110,13 @@ type FirestoreDocumentIterator struct {
 	iter *firestore.DocumentIterator
 }
 
-func (fdi *FirestoreDocumentIterator) Next() (bool, abstruct.FirestoreDocumentSnapshop, utility.IError) {
+func (fdi *FirestoreDocumentIterator) Next() (bool, abstruct.FirestoreDocumentSnapshop, utilerror.IError) {
 	snapshot, err := fdi.iter.Next()
 	if err == iterator.Done {
-		return false, snapshot, utility.NewError(err.Error(), "")
+		return false, snapshot, utilerror.New(err.Error(), "")
 	}
 	if err != nil {
-		return false, snapshot, utility.NewError(err.Error(), "")
+		return false, snapshot, utilerror.New(err.Error(), "")
 	}
 	return true, snapshot, nil
 }

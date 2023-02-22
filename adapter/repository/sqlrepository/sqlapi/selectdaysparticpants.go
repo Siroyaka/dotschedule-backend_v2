@@ -8,6 +8,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain/apidomain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/apireference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -30,14 +31,14 @@ func NewSelectDaysParticipantsRepository(
 	}
 }
 
-func (repos SelectDaysParticipantsRepository) scan(s sqlwrapper.IScan) (apireference.DayParticipantsResponse, utility.IError) {
+func (repos SelectDaysParticipantsRepository) scan(s sqlwrapper.IScan) (apireference.DayParticipantsResponse, utilerror.IError) {
 	var date string
 	var particpants string
 	if err := s.Scan(
 		&date,
 		&particpants,
 	); err != nil {
-		return apireference.DayParticipantsResponse{}, utility.NewError(err.Error(), "")
+		return apireference.DayParticipantsResponse{}, utilerror.New(err.Error(), "")
 	}
 
 	participantsData, ierr := utility.JsonUnmarshal[[]apidomain.StreamerData](particpants)
@@ -53,7 +54,7 @@ func (repos SelectDaysParticipantsRepository) scan(s sqlwrapper.IScan) (apirefer
 	}, nil
 }
 
-func (repos SelectDaysParticipantsRepository) Execute(date apireference.FromToDate) ([]apireference.DayParticipantsResponse, utility.IError) {
+func (repos SelectDaysParticipantsRepository) Execute(date apireference.FromToDate) ([]apireference.DayParticipantsResponse, utilerror.IError) {
 	dateFrom := date.From.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	dateTo := date.To.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	result, err := repos.selectWrapper.SelectPrepare(repos.scan, repos.localTimeDifference, dateFrom, dateTo, repos.viewStatus, repos.localTimeDifference)

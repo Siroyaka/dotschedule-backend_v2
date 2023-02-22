@@ -5,6 +5,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -18,7 +19,7 @@ func NewRSSRequestRepository(request abstruct.HTTPRequest) RSSRequestRepository 
 	}
 }
 
-func (repos RSSRequestRepository) converter(feedText string) (utility.IFeed, utility.IError) {
+func (repos RSSRequestRepository) converter(feedText string) (utility.IFeed, utilerror.IError) {
 	rssParser := utility.NewRSSParser(string(wrappedbasics.WrappedTimeProps.DateTimeFormat()))
 	feed, err := rssParser.Parse(feedText)
 	if err != nil {
@@ -27,7 +28,7 @@ func (repos RSSRequestRepository) converter(feedText string) (utility.IFeed, uti
 	return feed, nil
 }
 
-func (repos RSSRequestRepository) Execute(url string) (utility.IFeed, utility.IError) {
+func (repos RSSRequestRepository) Execute(url string) (utility.IFeed, utilerror.IError) {
 	response, err := repos.request.Get(url)
 	if err != nil {
 		return nil, err.WrapError()

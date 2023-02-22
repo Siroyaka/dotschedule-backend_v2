@@ -5,7 +5,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type UpdateScheduleRepository struct {
@@ -18,7 +18,7 @@ func NewUpdateScheduleRepository(sqlHandler abstruct.SqlHandler, query string) U
 	}
 }
 
-func (repos UpdateScheduleRepository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utility.IError) {
+func (repos UpdateScheduleRepository) Execute(scheduleData domain.FullScheduleData) (reference.DBUpdateResponse, utilerror.IError) {
 	count, id, err := repos.updateWrapper.UpdatePrepare(
 		scheduleData.Url,
 		scheduleData.StreamerName,

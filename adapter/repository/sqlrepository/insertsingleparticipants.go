@@ -5,7 +5,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -19,7 +19,7 @@ func NewInsertSingleParticipantsRepository(sqlHandler abstruct.SqlHandler, query
 	}
 }
 
-func (repos InsertSingleParticipantsRepository) Execute(data participants.SingleInsertData) (reference.DBUpdateResponse, utility.IError) {
+func (repos InsertSingleParticipantsRepository) Execute(data participants.SingleInsertData) (reference.DBUpdateResponse, utilerror.IError) {
 	streamingId, platformType, streamerId, updateAt := data.Extract()
 	count, id, err := repos.updateWrapper.UpdatePrepare(streamingId, platformType, streamerId, updateAt.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()))
 

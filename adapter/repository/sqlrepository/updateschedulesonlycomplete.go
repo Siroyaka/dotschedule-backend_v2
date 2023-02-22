@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -31,7 +32,7 @@ func NewUpdateScheduleOnlyCompleteTo0Repository(
 	}
 }
 
-func (repos UpdateScheduleOnlyCompleteTo0Repository) Execute(data reference.StreamingIDListWithPlatformID) (reference.DBUpdateResponse, utility.IError) {
+func (repos UpdateScheduleOnlyCompleteTo0Repository) Execute(data reference.StreamingIDListWithPlatformID) (reference.DBUpdateResponse, utilerror.IError) {
 	completeStatus := 0
 	idList, platformType := data.Extract()
 	if len(idList) == 0 {
@@ -50,7 +51,7 @@ func (repos UpdateScheduleOnlyCompleteTo0Repository) Execute(data reference.Stre
 	count, id, err := repos.updateWrapper.UpdatePrepare(utility.ToInterfaceSlice(completeStatus, now.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()), platformType, idList)...)
 
 	if err != nil {
-		return reference.DBUpdateResponse{Count: count, Id: id}, utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return reference.DBUpdateResponse{Count: count, Id: id}, utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 
 	return reference.DBUpdateResponse{Count: count, Id: id}, nil

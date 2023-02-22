@@ -3,7 +3,7 @@ package domain
 import (
 	"encoding/json"
 
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type APIResponseData[X any] struct {
@@ -22,7 +22,7 @@ func NewAPIResponseData[X any](status string, length int, errorMessage string, r
 	}
 }
 
-func (ad APIResponseData[X]) ToJson() (string, utility.IError) {
+func (ad APIResponseData[X]) ToJson() (string, utilerror.IError) {
 	d := make(map[string]interface{})
 	d["status"] = ad.status
 	d["length"] = ad.length
@@ -31,7 +31,7 @@ func (ad APIResponseData[X]) ToJson() (string, utility.IError) {
 
 	responseJson, err := json.Marshal(d)
 	if err != nil {
-		return "", utility.NewError(err.Error(), utility.ERR_JSONPARSE)
+		return "", utilerror.New(err.Error(), utilerror.ERR_JSONPARSE)
 	}
 	return string(responseJson), nil
 }

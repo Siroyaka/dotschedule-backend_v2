@@ -10,6 +10,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/participants"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -69,7 +70,7 @@ func (intr NormalizationYoutubeDataInteractor) createStreamerDataMap(list []doma
 	for _, data := range list {
 		v, ok := data.PlatformData[intr.platformType]
 		if !ok {
-			utility.LogError(utility.NewError(fmt.Sprintf("%s has not %s data", data.StreamerID, intr.platformType), ""))
+			utility.LogError(utilerror.New(fmt.Sprintf("%s has not %s data", data.StreamerID, intr.platformType), ""))
 			continue
 		}
 		res[v.PlatformID] = data.StreamerMaster
@@ -77,14 +78,14 @@ func (intr NormalizationYoutubeDataInteractor) createStreamerDataMap(list []doma
 	return res
 }
 
-func (intr NormalizationYoutubeDataInteractor) makeStatus(videoData domain.YoutubeVideoData) (string, utility.IError) {
+func (intr NormalizationYoutubeDataInteractor) makeStatus(videoData domain.YoutubeVideoData) (string, utilerror.IError) {
 	if videoData.LiveStreamingDetails.IsEmpty() {
 		// this status is 0: not streaming. this is video.
 		return "0", nil
 	}
 
 	if videoData.Snippet.IsEmpty() {
-		return "100", utility.NewError(fmt.Sprintf("snippet is not found: %s", videoData.Id), "")
+		return "100", utilerror.New(fmt.Sprintf("snippet is not found: %s", videoData.Id), "")
 	}
 
 	switch videoData.Snippet.LiveBroadcastContent {
@@ -98,11 +99,11 @@ func (intr NormalizationYoutubeDataInteractor) makeStatus(videoData domain.Youtu
 		// this status is 3: streaming is upcoming.
 		return "3", nil
 	default:
-		return "100", utility.NewError(fmt.Sprintf("id: %s, ", videoData.Id), "")
+		return "100", utilerror.New(fmt.Sprintf("id: %s, ", videoData.Id), "")
 	}
 }
 
-func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain.YoutubeVideoData, beforeScheduleData domain.FullScheduleData, streamerMasterMap map[string]domain.StreamerMaster, updateAt wrappedbasics.IWrappedTime) (domain.FullScheduleData, utility.IError) {
+func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain.YoutubeVideoData, beforeScheduleData domain.FullScheduleData, streamerMasterMap map[string]domain.StreamerMaster, updateAt wrappedbasics.IWrappedTime) (domain.FullScheduleData, utilerror.IError) {
 	result := domain.NewEmptyFullScheduleData(beforeScheduleData.StreamingID, intr.platformType)
 	status, err := intr.makeStatus(videoData)
 	if err != nil {
@@ -243,7 +244,7 @@ func (intr NormalizationYoutubeDataInteractor) CreateDiscordPostData(afterSchedu
 	}
 }
 
-func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
+func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError {
 	streamerMasterSeedData, err := intr.getStreamerMasterRepos.Execute(intr.platformType)
 	if err != nil {
 		return err.WrapError()
@@ -275,7 +276,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 				utility.LogError(err.WrapError(fmt.Sprintf("{\"StreamingID\": \"%s\"}", data.StreamingID)))
 				continue
 			} else if updateResult.Count == 0 {
-				utility.LogError(utility.NewError(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
+				utility.LogError(utilerror.New(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
 				continue
 			}
 			utility.LogInfo(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
@@ -303,7 +304,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 			continue
 		}
 		if updateResult.Count == 0 {
-			utility.LogError(utility.NewError(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
+			utility.LogError(utilerror.New(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
 			continue
 		}
 
@@ -325,7 +326,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utility.IError {
 			if response, err := intr.insertParticipantsRepos.Execute(participantsSingleInsertData); err != nil {
 				utility.LogError(err.WrapError())
 			} else if response.Count == 0 {
-				utility.LogError(utility.NewError(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
+				utility.LogError(utilerror.New(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
 			}
 
 		}

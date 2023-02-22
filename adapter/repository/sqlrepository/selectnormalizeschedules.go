@@ -7,7 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type SelectNormalizeSchedulesRepository struct {
@@ -20,12 +20,12 @@ func NewSelectNormalizeSchedulesRepository(sqlHandler abstruct.SqlHandler, query
 	}
 }
 
-func (repos SelectNormalizeSchedulesRepository) scheduleScan(s sqlwrapper.IScan) (domain.FullScheduleData, utility.IError) {
+func (repos SelectNormalizeSchedulesRepository) scheduleScan(s sqlwrapper.IScan) (domain.FullScheduleData, utilerror.IError) {
 	var streaming_id, platform_type, status, insert_at string
 	var publish_datetime sql.NullString
 
 	if err := s.Scan(&streaming_id, &platform_type, &status, &publish_datetime, &insert_at); err != nil {
-		return domain.NewEmptyFullScheduleData("", ""), utility.NewError(err.Error(), "")
+		return domain.NewEmptyFullScheduleData("", ""), utilerror.New(err.Error(), "")
 	}
 
 	res := domain.NewEmptyFullScheduleData(streaming_id, platform_type)
@@ -38,7 +38,7 @@ func (repos SelectNormalizeSchedulesRepository) scheduleScan(s sqlwrapper.IScan)
 	return res, nil
 }
 
-func (repos SelectNormalizeSchedulesRepository) Execute(_ reference.VoidStruct) ([]domain.FullScheduleData, utility.IError) {
+func (repos SelectNormalizeSchedulesRepository) Execute(_ reference.VoidStruct) ([]domain.FullScheduleData, utilerror.IError) {
 	result, err := repos.selectWrapper.Select(repos.scheduleScan)
 	if err != nil {
 		return result, err.WrapError()

@@ -1,10 +1,10 @@
 package abstruct
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import "github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 
 type HTTPRequest interface {
-	Get(string) (HTTPResponse, utility.IError)
-	Post(HTTPPostParams) (HTTPResponse, utility.IError)
+	Get(string) (HTTPResponse, utilerror.IError)
+	Post(HTTPPostParams) (HTTPResponse, utilerror.IError)
 	SetTimeout(int)
 }
 

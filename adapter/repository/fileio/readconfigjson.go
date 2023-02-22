@@ -1,4 +1,4 @@
-package repository
+package fileio
 
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"

@@ -1,8 +1,6 @@
 package utility
 
-import (
-	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
-)
+import "github.com/Siroyaka/dotschedule-backend_v2/utility/config"
 
 type ConfigData map[string]interface{}
 

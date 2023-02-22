@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/mmcdole/gofeed"
 	ext "github.com/mmcdole/gofeed/extensions"
 )
@@ -37,11 +38,11 @@ func NewRSSParser(outputTimeFormat string) RSSParser {
 	}
 }
 
-func (rp RSSParser) Parse(text string) (IFeed, IError) {
+func (rp RSSParser) Parse(text string) (IFeed, utilerror.IError) {
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseString(text)
 	if err != nil {
-		return nil, NewError("", ERR_RSS_PARSE)
+		return nil, utilerror.New("", utilerror.ERR_RSS_PARSE)
 	}
 	return Feed{
 		feed:       *feed,

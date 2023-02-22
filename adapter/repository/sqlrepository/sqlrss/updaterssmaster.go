@@ -4,7 +4,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -18,7 +18,7 @@ func NewUpdateRSSMasterRepository(sqlHandler abstruct.SqlHandler, query string) 
 	}
 }
 
-func (repos UpdateRSSMasterRepository) Execute(data reference.IDWithTime) (reference.DBUpdateResponse, utility.IError) {
+func (repos UpdateRSSMasterRepository) Execute(data reference.IDWithTime) (reference.DBUpdateResponse, utilerror.IError) {
 	count, id, err := repos.updateWrapper.UpdatePrepare(
 		data.Time().ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()),
 		data.Id(),

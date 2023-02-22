@@ -1,6 +1,8 @@
 package config
 
-import "log"
+import (
+	"log"
+)
 
 var (
 	config      IConfig

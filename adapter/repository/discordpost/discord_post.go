@@ -6,6 +6,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 const (
@@ -24,7 +25,7 @@ func NewDiscordPostRepository(request abstruct.HTTPRequest, url string) DiscordP
 	}
 }
 
-func (repos DiscordPostRepository) Execute(param domain.DiscordWebhookParams) (string, utility.IError) {
+func (repos DiscordPostRepository) Execute(param domain.DiscordWebhookParams) (string, utilerror.IError) {
 	content, err := param.ToJson()
 	if err != nil {
 		return "Json Parse Error", err.WrapError()

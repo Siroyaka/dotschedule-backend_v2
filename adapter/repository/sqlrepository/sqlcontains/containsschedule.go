@@ -4,7 +4,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type ContainsScheduleRepository struct {
@@ -18,16 +18,16 @@ func NewContainsScheduleRepository(handler abstruct.SqlHandler, query string) Co
 	}
 }
 
-func (repos ContainsScheduleRepository) scan(s sqlwrapper.IScan) (int, utility.IError) {
+func (repos ContainsScheduleRepository) scan(s sqlwrapper.IScan) (int, utilerror.IError) {
 	var count int
 	err := s.Scan(&count)
 	if err != nil {
-		return 0, utility.NewError(err.Error(), utility.ERR_SQL_DATASCAN)
+		return 0, utilerror.New(err.Error(), utilerror.ERR_SQL_DATASCAN)
 	}
 	return count, nil
 }
 
-func (repos ContainsScheduleRepository) Execute(data reference.StreamingIDWithPlatformType) (bool, utility.IError) {
+func (repos ContainsScheduleRepository) Execute(data reference.StreamingIDWithPlatformType) (bool, utilerror.IError) {
 	id, platform := data.Extract()
 
 	counts, err := repos.selectWrapper.SelectPrepare(repos.scan, id, platform)
@@ -37,7 +37,7 @@ func (repos ContainsScheduleRepository) Execute(data reference.StreamingIDWithPl
 	}
 
 	if len(counts) == 0 {
-		return false, utility.NewError("query count is 0", utility.ERR_SQL_DATASCAN)
+		return false, utilerror.New("query count is 0", utilerror.ERR_SQL_DATASCAN)
 	}
 
 	return counts[0] != 0, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/repository/sqlrepository/sqlwrapper"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type SelectIDsFromIDsRepository struct {
@@ -30,16 +31,16 @@ func NewSelectIDsFromIDsRepository(
 	}
 }
 
-func (repos SelectIDsFromIDsRepository) scanable(s sqlwrapper.IScan) (string, utility.IError) {
+func (repos SelectIDsFromIDsRepository) scanable(s sqlwrapper.IScan) (string, utilerror.IError) {
 	var id string
 	var is_complete_data int
 	if err := s.Scan(&id, &is_complete_data); err != nil {
-		return utility.EmptyString, utility.NewError(err.Error(), "")
+		return utility.EmptyString, utilerror.New(err.Error(), "")
 	}
 	return id, nil
 }
 
-func (repos SelectIDsFromIDsRepository) Execute(data reference.StreamingIDListWithPlatformID) (utility.HashSet[string], utility.IError) {
+func (repos SelectIDsFromIDsRepository) Execute(data reference.StreamingIDListWithPlatformID) (utility.HashSet[string], utilerror.IError) {
 	idList, platform := data.Extract()
 
 	var replacedCharList []string

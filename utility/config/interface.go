@@ -9,3 +9,5 @@ type IConfig interface {
 	Has(string) bool
 	ConfigList() []string
 }
+
+type ConfigData map[string]interface{}

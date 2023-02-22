@@ -6,6 +6,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 type SelectParticipantsRepository struct {
@@ -18,21 +19,21 @@ func NewSelectParticipantsRepository(sqlHandler abstruct.SqlHandler, queryTempla
 	}
 }
 
-func (repos SelectParticipantsRepository) scan(s sqlwrapper.IScan) (string, utility.IError) {
+func (repos SelectParticipantsRepository) scan(s sqlwrapper.IScan) (string, utilerror.IError) {
 	var member_id string
 	err := s.Scan(&member_id)
 	if err != nil {
-		return utility.EmptyString, utility.NewError(err.Error(), utility.ERR_SQL_DATASCAN)
+		return utility.EmptyString, utilerror.New(err.Error(), utilerror.ERR_SQL_DATASCAN)
 	}
 	return member_id, nil
 }
 
-func (repos SelectParticipantsRepository) Execute(data reference.StreamingIDWithPlatformType) (domain.StreamingParticipants, utility.IError) {
+func (repos SelectParticipantsRepository) Execute(data reference.StreamingIDWithPlatformType) (domain.StreamingParticipants, utilerror.IError) {
 	streamingId, platform := data.Extract()
 
 	list, err := repos.selectwrapper.SelectPrepare(repos.scan, streamingId, platform)
 	if err != nil {
-		return domain.EmptyStreamingParticipants(), utility.NewError(err.Error(), utility.ERR_SQL_QUERY)
+		return domain.EmptyStreamingParticipants(), utilerror.New(err.Error(), utilerror.ERR_SQL_QUERY)
 	}
 
 	result := domain.NewStreamingParticipants(streamingId, platform)

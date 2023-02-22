@@ -8,6 +8,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -58,7 +59,7 @@ func NewFirestoreNewsInteractor(
 	}
 }
 
-func (intr FirestoreNewsInteractor) DataFetchFromFirestore() ([]domain.FirestoreNews, utility.IError) {
+func (intr FirestoreNewsInteractor) DataFetchFromFirestore() ([]domain.FirestoreNews, utilerror.IError) {
 	now := wrappedbasics.Now()
 
 	targetTime := now.Add(0, 0, 0, 0, -1*intr.firestoreTargetMin, 0)
@@ -80,7 +81,7 @@ func (intr FirestoreNewsInteractor) firestoreNewsToFullSchedule(data domain.Fire
 }
 
 // dbにすでにデータが存在しているか確認し、存在しているならupdate、存在していないならinsertを行う
-func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData) utility.IError {
+func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData) utilerror.IError {
 
 	alreadyContains, err := intr.containsScheduleRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID, data.PlatformType))
 	if err != nil {
@@ -92,21 +93,21 @@ func (intr FirestoreNewsInteractor) updateSchedule(data domain.FullScheduleData)
 		if updateResult, err := intr.updateFullScheduleRepos.Execute(data); err != nil {
 			return err.WrapError("schedule data update error")
 		} else if updateResult.Count == 0 {
-			return utility.NewError("schedule data update count is 0", "")
+			return utilerror.New("schedule data update count is 0", "")
 		}
 	} else {
 		utility.LogInfo(fmt.Sprintf("insert schedule. id: %s", data.StreamingID))
 		if insertResult, err := intr.insertFullScheduleRepos.Execute(data); err != nil {
 			return err.WrapError("schedule data insert error")
 		} else if insertResult.Count == 0 {
-			return utility.NewError("schedule data insert count is 0", "")
+			return utilerror.New("schedule data insert count is 0", "")
 		}
 	}
 	return nil
 }
 
 // firestorenewsのデータをparticipantsのデータに変換
-func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data domain.FirestoreNews) (domain.StreamingParticipants, utility.IError) {
+func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data domain.FirestoreNews) (domain.StreamingParticipants, utilerror.IError) {
 
 	platformToStreamerIdMap, err := intr.getPlatformIdRepos.Execute(intr.platform)
 	if err != nil {
@@ -122,7 +123,7 @@ func (intr FirestoreNewsInteractor) firestoreNewsToStreamingParticipants(data do
 }
 
 // Firestoreから取得したparticipantsのデータとDBのparticipantsのデータを揃える(Firestoreのデータを正とする)
-func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingParticipants) utility.IError {
+func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingParticipants) utilerror.IError {
 
 	dbData, err := intr.getStreamingParticipantsRepos.Execute(reference.NewStreamingIDWithPlatformType(data.StreamingID(), data.Platform()))
 	if err != nil {
@@ -138,7 +139,7 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 		deleteList = deleteList.Add(v)
 	}
 
-	var responseError utility.IError
+	var responseError utilerror.IError
 	responseError = nil
 	if !deleteList.IsEmpty() {
 		utility.LogInfo(fmt.Sprintf("delete participants data. id: %s [%s]", deleteList.StreamingID(), strings.Join(deleteList.GetList(), ", ")))
@@ -147,7 +148,7 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 			utility.LogError(err.WrapError("delete participants error"))
 			responseError = err.WrapError()
 		} else if deleteResult.Count < int64(len(deleteList.GetList())) {
-			utility.LogError(utility.NewError(fmt.Sprintf("delete data count wrong. list count: %d. delete count: %d", len(deleteList.GetList()), deleteResult.Count), ""))
+			utility.LogError(utilerror.New(fmt.Sprintf("delete data count wrong. list count: %d. delete count: %d", len(deleteList.GetList()), deleteResult.Count), ""))
 		}
 	}
 
@@ -167,7 +168,7 @@ func (intr FirestoreNewsInteractor) updateParticipants(data domain.StreamingPart
 			utility.LogError(err.WrapError("insert participants error"))
 			responseError = err.WrapError()
 		} else if insertResult.Count < int64(len(insertList.GetList())) {
-			utility.LogError(utility.NewError(fmt.Sprintf("insert data count wrong. list count: %d. insert count: %d", len(insertList.GetList()), insertResult.Count), ""))
+			utility.LogError(utilerror.New(fmt.Sprintf("insert data count wrong. list count: %d. insert count: %d", len(insertList.GetList()), insertResult.Count), ""))
 		}
 	}
 	return responseError

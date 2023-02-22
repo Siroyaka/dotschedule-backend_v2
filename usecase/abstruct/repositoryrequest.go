@@ -1,7 +1,7 @@
 package abstruct
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility"
+import "github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 
 type RepositoryRequest[P any, Res any] interface {
-	Execute(requestParam P) (response Res, err utility.IError)
+	Execute(requestParam P) (response Res, err utilerror.IError)
 }

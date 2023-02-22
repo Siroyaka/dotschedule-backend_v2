@@ -4,7 +4,7 @@ import (
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/apireference"
-	"github.com/Siroyaka/dotschedule-backend_v2/utility"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 )
 
@@ -20,7 +20,7 @@ func NewDayScheduleInteractor(
 	}
 }
 
-func (intr DayScheduleInteractor) GetScheduleData(fromDate, toDate wrappedbasics.IWrappedTime) ([]apireference.ScheduleResponse, utility.IError) {
+func (intr DayScheduleInteractor) GetScheduleData(fromDate, toDate wrappedbasics.IWrappedTime) ([]apireference.ScheduleResponse, utilerror.IError) {
 	result, err := intr.getRepos.Execute(apireference.FromToDate{From: fromDate, To: toDate})
 	if err != nil {
 		return result, err.WrapError()
@@ -28,7 +28,7 @@ func (intr DayScheduleInteractor) GetScheduleData(fromDate, toDate wrappedbasics
 	return result, nil
 }
 
-func (intr DayScheduleInteractor) ToJson(data []apireference.ScheduleResponse) (string, utility.IError) {
+func (intr DayScheduleInteractor) ToJson(data []apireference.ScheduleResponse) (string, utilerror.IError) {
 	d := domain.NewAPIResponseData("ok", len(data), "", data)
 	result, err := d.ToJson()
 	if err != nil {

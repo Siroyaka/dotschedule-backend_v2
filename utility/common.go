@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 const (
@@ -63,28 +65,28 @@ func ToInterfaceSlice(l ...interface{}) (list []interface{}) {
 	return list
 }
 
-func JsonUnmarshal[X any](jsonData string) (result X, ierr IError) {
+func JsonUnmarshal[X any](jsonData string) (result X, ierr utilerror.IError) {
 	if err := json.Unmarshal([]byte(jsonData), &result); err != nil {
-		ierr = NewError(err.Error(), ERR_JSONPARSE)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_JSONPARSE)
 	}
 	return
 }
 
-func JsonDecode[X any](reader io.Reader) (result X, ierr IError) {
+func JsonDecode[X any](reader io.Reader) (result X, ierr utilerror.IError) {
 	if err := json.NewDecoder(reader).Decode(&result); err != nil {
-		ierr = NewError(err.Error(), ERR_JSONPARSE)
+		ierr = utilerror.New(err.Error(), utilerror.ERR_JSONPARSE)
 	}
 	return
 }
 
-func ConvertFromInterfaceType[X any](value interface{}) (res X, err IError) {
+func ConvertFromInterfaceType[X any](value interface{}) (res X, err utilerror.IError) {
 	switch ci := value.(type) {
 	case X:
 		res = ci
 		err = nil
 		return
 	default:
-		err = NewError("", ERR_TYPEPARSE, reflect.TypeOf(value))
+		err = utilerror.New("", utilerror.ERR_TYPEPARSE, reflect.TypeOf(value))
 		return
 	}
 }

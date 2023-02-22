@@ -3,6 +3,7 @@ package otheroutbound
 import (
 	"github.com/Siroyaka/dotschedule-backend_v2/adapter/abstruct"
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
 
 	"github.com/Siroyaka/dotschedule-backend_v2/utility"
@@ -39,7 +40,7 @@ func NewGetFirestoreNewsRepository(
 	}
 }
 
-func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus int, updateAt string, participants map[string]bool) (domain.FirestoreNews, utility.IError) {
+func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus int, updateAt string, participants map[string]bool) (domain.FirestoreNews, utilerror.IError) {
 	var participantsList []string
 	for k := range participants {
 		participantsList = append(participantsList, k)
@@ -53,7 +54,7 @@ func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus in
 	return domain.NewFirestoreNews(videoID, videoStatus, updateAtTime, participantsList), nil
 }
 
-func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interface{}) (videoID string, videoStatus int, updateAt string, participants map[string]bool, err utility.IError) {
+func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interface{}) (videoID string, videoStatus int, updateAt string, participants map[string]bool, err utilerror.IError) {
 	videoID, err = utility.ConvertFromInterfaceType[string](m[repos.documentNameVideoID])
 	if err != nil {
 		err = err.WrapError("videoId type error")
@@ -86,7 +87,7 @@ func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interfac
 
 func (repos GetFirestoreNewsRepository) Execute(
 	targetTime wrappedbasics.IWrappedTime,
-) ([]domain.FirestoreNews, utility.IError) {
+) ([]domain.FirestoreNews, utilerror.IError) {
 	t := targetTime.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	iter := repos.firestore.Collection(repos.collectionName).Where(repos.compareble, repos.operator, t).Documents(repos.firestore.GetContext())
 	var responseData []domain.FirestoreNews
