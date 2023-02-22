@@ -1,6 +1,9 @@
 package utility
 
-import "github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+import (
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
+)
 
 type ConfigData map[string]interface{}
 
@@ -22,24 +25,24 @@ func (c Config) Has(key string) bool {
 
 func (c Config) check(k string) {
 	if !c.Has(k) {
-		LogFatal(NewError("", ERR_CONFIG_NOTFOUND, k))
-		panic(NewError("", ERR_CONFIG_NOTFOUND, k))
+		LogFatal(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
+		panic(utilerror.New("", utilerror.ERR_CONFIG_NOTFOUND, k))
 	}
 }
 
-func configRead[X any](data interface{}) (result X, err IError) {
+func configRead[X any](data interface{}) (result X, err utilerror.IError) {
 	switch value := data.(type) {
 	case X:
 		result = value
 		err = nil
 		return
 	default:
-		err = NewError("config type error", "")
+		err = utilerror.New("config type error", "")
 		return
 	}
 }
 
-func configListRead[X any](list []interface{}) (result []X, err IError) {
+func configListRead[X any](list []interface{}) (result []X, err utilerror.IError) {
 	for _, v := range list {
 		r, e := configRead[X](v)
 		if e != nil {

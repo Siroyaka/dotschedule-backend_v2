@@ -10,6 +10,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/mode"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/config"
+	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 )
 
 const (
@@ -98,7 +99,7 @@ func makeLogFilePath(logDir, logName, logSuffix string) string {
 	}
 
 	if f, err := os.Stat(logDir); os.IsNotExist(err) || !f.IsDir() {
-		LogError(NewError(err.Error(), ""))
+		LogError(utilerror.New(err.Error(), ""))
 		return ""
 	}
 
@@ -150,10 +151,10 @@ func loggerSwitch() {
 	}
 }
 
-func loggerSetup(logFilePath string, isOsOutput bool) IError {
+func loggerSetup(logFilePath string, isOsOutput bool) utilerror.IError {
 	logfile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		return NewError(err.Error(), "")
+		return utilerror.New(err.Error(), "")
 	}
 	if isOsOutput {
 		log.SetOutput(io.MultiWriter(os.Stdout, logfile))
