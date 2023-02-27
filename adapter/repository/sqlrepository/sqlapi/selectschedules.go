@@ -110,8 +110,8 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 }
 
 func (repos SelectSchedulesRepository) Execute(date apireference.FromToDate) ([]apireference.ScheduleResponse, utilerror.IError) {
-	dateFrom := date.From.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
-	dateTo := date.To.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
+	dateFrom := date.From.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
+	dateTo := date.To.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 	result, err := repos.selectWrapper.SelectPrepare(repos.scan, dateFrom, dateTo, repos.viewStatus)
 	if err != nil {
 		return result, err.WrapError()
