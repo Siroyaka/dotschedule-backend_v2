@@ -134,7 +134,7 @@ func (intr RSSInteractor) GetRSSData() ([]domain.SeedSchedule, utilerror.IError)
 	return list, nil
 }
 
-func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt wrappedbasics.WrappedTime, ierr utilerror.IError) {
+func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, updateCount int, isError bool, newestPublishedAt wrappedbasics.IWrappedTime, ierr utilerror.IError) {
 	var idList []string
 	isError = false
 
@@ -200,7 +200,7 @@ func (intr RSSInteractor) PushToDB(list []domain.SeedSchedule) (insertCount, upd
 	return
 }
 
-func (intr RSSInteractor) EndRow(updateAt wrappedbasics.WrappedTime) utilerror.IError {
+func (intr RSSInteractor) EndRow(updateAt wrappedbasics.IWrappedTime) utilerror.IError {
 	master := intr.masterList[intr.index]
 
 	// マスターの更新日付より後の日付が渡されたら更新する

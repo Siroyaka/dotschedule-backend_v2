@@ -28,7 +28,7 @@ func NewMonthRequestController(
 	}
 }
 
-func (c MonthRequestController) MonthRequestHandler() http.Handler {
+func (c MonthRequestController) RequestHandler() http.Handler {
 	return http.HandlerFunc(c.monthRequest)
 }
 

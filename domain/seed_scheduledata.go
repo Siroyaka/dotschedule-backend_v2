@@ -11,10 +11,10 @@ type SeedSchedule struct {
 	participants   []string
 	visibleStatus  int
 	completeStatus int
-	publishedAt    wrappedbasics.WrappedTime
+	publishedAt    wrappedbasics.IWrappedTime
 }
 
-func NewSeedSchedule(id, platformType, status string, publishedAt wrappedbasics.WrappedTime) SeedSchedule {
+func NewSeedSchedule(id, platformType, status string, publishedAt wrappedbasics.IWrappedTime) SeedSchedule {
 	return SeedSchedule{
 		id:             id,
 		platformType:   platformType,
@@ -26,7 +26,7 @@ func NewSeedSchedule(id, platformType, status string, publishedAt wrappedbasics.
 	}
 }
 
-func NewSeedScheduleWithParticipants(id, platformType, status string, publishedAt wrappedbasics.WrappedTime, participants []string) SeedSchedule {
+func NewSeedScheduleWithParticipants(id, platformType, status string, publishedAt wrappedbasics.IWrappedTime, participants []string) SeedSchedule {
 	return SeedSchedule{
 		id:             id,
 		platformType:   platformType,
@@ -38,7 +38,7 @@ func NewSeedScheduleWithParticipants(id, platformType, status string, publishedA
 	}
 }
 
-func (s SeedSchedule) GetPublishedAt() wrappedbasics.WrappedTime {
+func (s SeedSchedule) GetPublishedAt() wrappedbasics.IWrappedTime {
 	return s.publishedAt
 }
 

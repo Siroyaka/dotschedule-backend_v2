@@ -8,10 +8,10 @@ type RSSMaster struct {
 	ID         string
 	Name       string
 	Url        string
-	LastUpdate wrappedbasics.WrappedTime
+	LastUpdate wrappedbasics.IWrappedTime
 }
 
-func NewRSSMaster(id string, name string, url string, lastupdate wrappedbasics.WrappedTime) RSSMaster {
+func NewRSSMaster(id string, name string, url string, lastupdate wrappedbasics.IWrappedTime) RSSMaster {
 	return RSSMaster{
 		ID:         id,
 		Name:       name,

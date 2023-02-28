@@ -21,7 +21,7 @@ func NewScheduleController(scheduleIntr interactor.DayScheduleInteractor, conten
 	}
 }
 
-func (c ViewScheduleController) ScheduleRequestHandler() http.Handler {
+func (c ViewScheduleController) RequestHandler() http.Handler {
 	return http.HandlerFunc(c.scheduleRequest)
 }
 
