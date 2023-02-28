@@ -46,7 +46,7 @@ func (c ViewScheduleController) scheduleRequest(w http.ResponseWriter, r *http.R
 
 	toDate := fromDate.Add(0, 0, 1, 0, 0, 0)
 
-	logger.Info(fmt.Sprintf("Schedule Request. Date: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.DateFormat())))
+	logger.Info(fmt.Sprintf("Schedule Request. Date: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.OtherFormats("BasicDate"))))
 
 	list, err := c.scheduleIntr.GetScheduleData(fromDate, toDate)
 
