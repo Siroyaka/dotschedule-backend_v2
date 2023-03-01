@@ -67,7 +67,7 @@ func (c MonthRequestController) monthRequest(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	logger.Info(fmt.Sprintf("Month Request. month: %s", month))
+	logger.Info(fmt.Sprintf("Month Request. Month: %s", fromDate.ToLocalFormatString(wrappedbasics.WrappedTimeProps.OtherFormats("BasicMonth"))))
 
 	toDate := c.monthAdd(fromDate, 1)
 
