@@ -161,7 +161,6 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		return
 	}
 	if searchResultCount == 0 {
-		// todo: api応答の0件のときのデータを作ってレスポンスするようにする
 		result := domain.NewAPIResponseData(
 			"ok",
 			searchResultCount,
