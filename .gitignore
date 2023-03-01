@@ -28,7 +28,6 @@ project/test_project
 
 **/config.json
 app
-api
 local_test.sh
 
 # 一時的
