@@ -27,9 +27,20 @@ const (
 	config_sqlDataSplitter  = "DATA_SPLITTER"
 	config_sqlArraySplitter = "ARRAY_SPLITTER"
 
-	config_query       = "QUERY"
-	config_getschedule = "GET_DAYSCHEDULE"
-	config_getmonth    = "GET_DAYS_PARTICIPANTS_LIST"
+	config_sqlReplaceTargetString  = "TARGETS_STRING"
+	config_sqlReplacedChar         = "REPLACED_CHAR"
+	config_sqlReplacedCharSplitter = "REPLACED_CHAR_SPLITTER"
+
+	config_query                    = "QUERY"
+	config_getschedule              = "GET_DAYSCHEDULE"
+	config_getmonth                 = "GET_DAYS_PARTICIPANTS_LIST"
+	config_getstreamingsearch       = "GET_STREAMING_SEARCH"
+	config_substreamingsearchmember = "SUB_STREAMING_SEARCH_MEMBER"
+	config_countstreamingsearchlen  = "COUNT_STREAMING_SEARCH_LEN"
+
+	config_searchconstructions = "SEARCH_CONSTRUCTIONS"
+	config_searchdefaultfrom   = "DEFAULT_FROM"
+	config_searchdatekey       = "DATEKEY"
 
 	config_localTimeDifference = "LOCAL_TIMEDIFFERENCE"
 	config_viewingStatus       = "VIEWING_STATUS"
@@ -37,6 +48,7 @@ const (
 	config_port                = "PORT"
 	config_scheduleRoute       = "ROUTE_SCHEDULE"
 	config_monthRoute          = "ROUTE_MONTH"
+	config_streamSearchRoute   = "ROUTE_STREAMSEARCH"
 )
 
 func heartBeat(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +75,7 @@ func main() {
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
+	searchConfig := rootConfig.ReadChild(config_searchconstructions)
 
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
@@ -80,12 +93,44 @@ func main() {
 		rootConfig.ReadInteger(config_localTimeDifference),
 	)
 
+	searchRepos := sqlapi.NewSelectStreamingSearchRepository(
+		sqlHandler,
+		queryConfig.Read(config_getstreamingsearch),
+		queryConfig.Read(config_substreamingsearchmember),
+		"",
+		searchConfig.Read(config_searchdefaultfrom),
+		searchConfig.Read(config_searchdatekey),
+		sqlConfig.Read(config_sqlReplaceTargetString),
+		sqlConfig.Read(config_sqlReplacedChar),
+		sqlConfig.Read(config_sqlReplacedCharSplitter),
+		1,
+		50,
+	)
+
+	countRepos := sqlapi.NewCountStreamingSearchRepository(
+		sqlHandler,
+		queryConfig.Read(config_countstreamingsearchlen),
+		queryConfig.Read(config_substreamingsearchmember),
+		"",
+		searchConfig.Read(config_searchdefaultfrom),
+		searchConfig.Read(config_searchdatekey),
+		sqlConfig.Read(config_sqlReplaceTargetString),
+		sqlConfig.Read(config_sqlReplacedChar),
+		sqlConfig.Read(config_sqlReplacedCharSplitter),
+		1,
+	)
+
 	scheduleInteractor := interactor.NewDayScheduleInteractor(
 		scheduleRepository,
 	)
 
 	monthDataInteractor := interactor.NewDaysParticipantsInteractor(
 		selectDaysParticipantsRepository,
+	)
+
+	streamingSearchInteractor := interactor.NewStreamingSearchInteractor(
+		searchRepos,
+		countRepos,
 	)
 
 	scController := controller.NewScheduleController(
@@ -99,9 +144,16 @@ func main() {
 		rootConfig.ReadInteger(config_localTimeDifference),
 	)
 
+	streamSearchController := controller.NewStreamSearchRequestController(
+		streamingSearchInteractor,
+		rootConfig.Read(config_contentType),
+		rootConfig.ReadInteger(config_localTimeDifference),
+	)
+
 	router := infrastructure.NewRouter(rootConfig.Read(config_port))
-	router.SetHandle(rootConfig.Read(config_scheduleRoute), scController.ScheduleRequestHandler())
-	router.SetHandle(rootConfig.Read(config_monthRoute), monthController.MonthRequestHandler())
+	router.SetHandle(rootConfig.Read(config_scheduleRoute), scController.RequestHandler())
+	router.SetHandle(rootConfig.Read(config_monthRoute), monthController.RequestHandler())
+	router.SetHandle(rootConfig.Read(config_streamSearchRoute), streamSearchController.RequestHandler())
 	router.SetHandleFunc(heartBeatRoute, heartBeat)
 	router.Run()
 }
