@@ -8,6 +8,7 @@ import (
 
 	"github.com/Siroyaka/dotschedule-backend_v2/domain"
 	"github.com/Siroyaka/dotschedule-backend_v2/usecase/interactor"
+	"github.com/Siroyaka/dotschedule-backend_v2/usecase/reference/apireference"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/logger"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/utilerror"
 	"github.com/Siroyaka/dotschedule-backend_v2/utility/wrappedbasics"
@@ -165,7 +166,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 			"ok",
 			searchResultCount,
 			"No Streaming Schedules",
-			"{}",
+			[]apireference.ScheduleResponse{},
 		)
 		json, err := result.ToJson()
 		if err != nil {
