@@ -41,6 +41,7 @@ const (
 	config_searchconstructions = "SEARCH_CONSTRUCTIONS"
 	config_searchdefaultfrom   = "DEFAULT_FROM"
 	config_searchdatekey       = "DATEKEY"
+	config_searchlenLimit      = "LIMIT"
 
 	config_localTimeDifference = "LOCAL_TIMEDIFFERENCE"
 	config_viewingStatus       = "VIEWING_STATUS"
@@ -103,8 +104,8 @@ func main() {
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
-		1,
-		50,
+		rootConfig.ReadInteger(config_viewingStatus),
+		searchConfig.ReadInteger(config_searchlenLimit),
 	)
 
 	countRepos := sqlapi.NewCountStreamingSearchRepository(
@@ -117,7 +118,7 @@ func main() {
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
-		1,
+		rootConfig.ReadInteger(config_viewingStatus),
 	)
 
 	scheduleInteractor := interactor.NewDayScheduleInteractor(
