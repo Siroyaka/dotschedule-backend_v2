@@ -36,13 +36,14 @@ func (c StreamSearchRequestController) RequestHandler() http.Handler {
 	return http.HandlerFunc(c.searchRequest)
 }
 
-func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string) {
+func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string, string) {
 	member := r.Get("member")
 	from := r.Get("from")
 	to := r.Get("to")
 	tag := r.Get("tag")
 	page := r.Get("page")
-	return member, from, to, tag, page
+	title := r.Get("title")
+	return member, from, to, tag, page, title
 }
 
 func (c StreamSearchRequestController) paramsParse(from, to, page string) (wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, int, utilerror.IError) {
@@ -87,6 +88,7 @@ func (c StreamSearchRequestController) requestValueLogging(
 	to wrappedbasics.IWrappedTime,
 	tag string,
 	page int,
+	titleValue string,
 ) {
 	var loggingValues []string
 
@@ -110,6 +112,10 @@ func (c StreamSearchRequestController) requestValueLogging(
 		loggingValues = append(loggingValues, fmt.Sprintf("\"page\": \"%d\"", page))
 	}
 
+	if titleValue != "" {
+		loggingValues = append(loggingValues, fmt.Sprintf("\"title\": \"%s\"", titleValue))
+	}
+
 	if len(loggingValues) == 0 {
 		return
 	}
@@ -122,7 +128,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 	// fromの翌日日付がtoならfromの日からtoの日の合わせて2日分となるようにすること
 	w.Header().Set("Content-Type", c.contentType)
 
-	member, fromValue, toValue, tag, pageValue := c.readRequestParams(r.URL.Query())
+	member, fromValue, toValue, tag, pageValue, titleValue := c.readRequestParams(r.URL.Query())
 
 	from, to, page, err := c.paramsParse(fromValue, toValue, pageValue)
 
@@ -139,6 +145,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		to,
 		tag,
 		page,
+		titleValue,
 	)
 
 	// toは1日あとの日付にここで加工する
@@ -146,7 +153,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		to = to.Add(0, 0, 1, 0, 0, 0)
 	}
 
-	value, err := c.streamingSearchIntr.CreateValue(member, from, to, tag, page)
+	value, err := c.streamingSearchIntr.CreateValue(member, from, to, tag, page, titleValue)
 	if err != nil {
 		logger.Info(err.WrapError().Error())
 		w.WriteHeader(400)
@@ -161,6 +168,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		fmt.Fprint(w, "Service Error")
 		return
 	}
+
 	if searchResultCount == 0 {
 		result := domain.NewAPIResponseData(
 			"ok",

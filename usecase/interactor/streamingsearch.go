@@ -32,6 +32,7 @@ func (intr StreamingSearchInteractor) CreateValue(
 	to wrappedbasics.IWrappedTime,
 	tags string,
 	page int,
+	titleValue string,
 ) (apireference.StreamingSearchValues, utilerror.IError) {
 	textRegex := regexp.MustCompile("([0-9]|[a-z])*")
 
@@ -63,7 +64,7 @@ func (intr StreamingSearchInteractor) CreateValue(
 		}
 	}
 
-	return apireference.NewStreamingSearchValues(memberIDList, from, to, tagList, page), nil
+	return apireference.NewStreamingSearchValues(memberIDList, from, to, tagList, page, titleValue), nil
 }
 
 func (intr StreamingSearchInteractor) Count(searchValue apireference.StreamingSearchValues) (int, utilerror.IError) {

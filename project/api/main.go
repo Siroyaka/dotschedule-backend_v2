@@ -31,16 +31,21 @@ const (
 	config_sqlReplacedChar         = "REPLACED_CHAR"
 	config_sqlReplacedCharSplitter = "REPLACED_CHAR_SPLITTER"
 
-	config_query                    = "QUERY"
-	config_getschedule              = "GET_DAYSCHEDULE"
-	config_getmonth                 = "GET_DAYS_PARTICIPANTS_LIST"
-	config_getstreamingsearch       = "GET_STREAMING_SEARCH"
-	config_substreamingsearchmember = "SUB_STREAMING_SEARCH_MEMBER"
-	config_countstreamingsearchlen  = "COUNT_STREAMING_SEARCH_LEN"
+	config_query                   = "QUERY"
+	config_getschedule             = "GET_DAYSCHEDULE"
+	config_getmonth                = "GET_DAYS_PARTICIPANTS_LIST"
+	config_getstreamingsearch      = "GET_STREAMING_SEARCH"
+	config_countstreamingsearchlen = "COUNT_STREAMING_SEARCH_LEN"
+
+	config_subquery                 = "SUB"
+	config_substreamingsearchmember = "STREAMING_SEARCH_MEMBER"
+	config_substreamingsearchtag    = "STREAMING_SEARCH_TAG"
+	config_substreamingsearchfrom   = "STREAMING_SEARCH_FROM"
+	config_substreamingsearchto     = "STREAMING_SEARCH_TO"
+	config_substreamingsearchtitle  = "STREAMING_SEARCH_TITLE"
 
 	config_searchconstructions = "SEARCH_CONSTRUCTIONS"
 	config_searchdefaultfrom   = "DEFAULT_FROM"
-	config_searchdatekey       = "DATEKEY"
 	config_searchlenLimit      = "LIMIT"
 
 	config_localTimeDifference = "LOCAL_TIMEDIFFERENCE"
@@ -76,6 +81,7 @@ func main() {
 	sqlConfig := config.ReadChild(config_sql)
 	rootConfig := config.ReadProjectConfig()
 	queryConfig := rootConfig.ReadChild(config_query)
+	subqueryConfig := queryConfig.ReadChild(config_subquery)
 	searchConfig := rootConfig.ReadChild(config_searchconstructions)
 
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
@@ -97,10 +103,12 @@ func main() {
 	searchRepos := sqlapi.NewSelectStreamingSearchRepository(
 		sqlHandler,
 		queryConfig.Read(config_getstreamingsearch),
-		queryConfig.Read(config_substreamingsearchmember),
-		"",
+		subqueryConfig.Read(config_substreamingsearchmember),
+		subqueryConfig.Read(config_substreamingsearchtag),
+		subqueryConfig.Read(config_substreamingsearchfrom),
+		subqueryConfig.Read(config_substreamingsearchto),
+		subqueryConfig.Read(config_substreamingsearchtitle),
 		searchConfig.Read(config_searchdefaultfrom),
-		searchConfig.Read(config_searchdatekey),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
@@ -111,10 +119,12 @@ func main() {
 	countRepos := sqlapi.NewCountStreamingSearchRepository(
 		sqlHandler,
 		queryConfig.Read(config_countstreamingsearchlen),
-		queryConfig.Read(config_substreamingsearchmember),
-		"",
+		subqueryConfig.Read(config_substreamingsearchmember),
+		subqueryConfig.Read(config_substreamingsearchtag),
+		subqueryConfig.Read(config_substreamingsearchfrom),
+		subqueryConfig.Read(config_substreamingsearchto),
+		subqueryConfig.Read(config_substreamingsearchtitle),
 		searchConfig.Read(config_searchdefaultfrom),
-		searchConfig.Read(config_searchdatekey),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
 		sqlConfig.Read(config_sqlReplacedCharSplitter),

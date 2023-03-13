@@ -8,6 +8,7 @@ type StreamingSearchValues struct {
 	to     wrappedbasics.IWrappedTime
 	tags   []string
 	page   int
+	title  string
 }
 
 func NewStreamingSearchValues(
@@ -16,6 +17,7 @@ func NewStreamingSearchValues(
 	to wrappedbasics.IWrappedTime,
 	tags []string,
 	page int,
+	title string,
 ) StreamingSearchValues {
 	return StreamingSearchValues{
 		member: member,
@@ -23,6 +25,7 @@ func NewStreamingSearchValues(
 		to:     to,
 		tags:   tags,
 		page:   page,
+		title:  title,
 	}
 }
 
@@ -30,6 +33,6 @@ func EmptyStreamingSearchValues() StreamingSearchValues {
 	return StreamingSearchValues{}
 }
 
-func (ssv StreamingSearchValues) Extract() ([]string, wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, []string, int) {
-	return ssv.member, ssv.from, ssv.to, ssv.tags, ssv.page
+func (ssv StreamingSearchValues) Extract() ([]string, wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, []string, int, string) {
+	return ssv.member, ssv.from, ssv.to, ssv.tags, ssv.page, ssv.title
 }

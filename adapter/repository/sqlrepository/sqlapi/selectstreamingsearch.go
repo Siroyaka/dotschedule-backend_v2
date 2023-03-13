@@ -20,8 +20,10 @@ type SelectStreamingSearchRepository struct {
 	mainQuery            string
 	subQueryMember       string
 	subQueryTags         string
+	subQueryTitle        string
+	subQueryFrom         string
+	subQueryTo           string
 	defaultFrom          string
-	datekey              string
 	replaceTargetsString string
 	replaceChar          string
 	replaceCharSplitter  string
@@ -34,8 +36,10 @@ func NewSelectStreamingSearchRepository(
 	mainQuery string,
 	subQueryMember string,
 	subQueryTags string,
+	subQueryFrom string,
+	subQueryTo string,
+	subQueryTitle string,
 	defaultFrom string,
-	datekey string,
 	replaceTargetsString string,
 	replaceChar string,
 	replaceCharSplitter string,
@@ -47,8 +51,10 @@ func NewSelectStreamingSearchRepository(
 		mainQuery:            mainQuery,
 		subQueryMember:       subQueryMember,
 		subQueryTags:         subQueryTags,
+		subQueryFrom:         subQueryFrom,
+		subQueryTo:           subQueryTo,
+		subQueryTitle:        subQueryTitle,
 		defaultFrom:          defaultFrom,
-		datekey:              datekey,
 		replaceTargetsString: replaceTargetsString,
 		replaceChar:          replaceChar,
 		replaceCharSplitter:  replaceCharSplitter,
@@ -136,11 +142,11 @@ func (repos SelectStreamingSearchRepository) scan(s sqlwrapper.IScan) (apirefere
 	}, nil
 }
 
-func (repos SelectStreamingSearchRepository) createQueryWheres(members []string, from, to wrappedbasics.IWrappedTime) (string, []interface{}) {
+func (repos SelectStreamingSearchRepository) createQueryWheres(members []string, from, to wrappedbasics.IWrappedTime, title string) (string, []interface{}) {
 	var whereQuerys []string
 	var whereValues []interface{}
 
-	whereQuerys = append(whereQuerys, fmt.Sprintf("%s >= ?", repos.datekey))
+	whereQuerys = append(whereQuerys, repos.subQueryFrom)
 
 	if from != nil {
 		whereValues = append(whereValues, from.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()))
@@ -149,7 +155,7 @@ func (repos SelectStreamingSearchRepository) createQueryWheres(members []string,
 	}
 
 	if to != nil {
-		whereQuerys = append(whereQuerys, fmt.Sprintf("%s < ?", repos.datekey))
+		whereQuerys = append(whereQuerys, repos.subQueryTo)
 		whereValues = append(whereValues, to.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat()))
 	}
 
@@ -174,13 +180,18 @@ func (repos SelectStreamingSearchRepository) createQueryWheres(members []string,
 		}
 	}
 
+	if len(title) > 0 {
+		whereValues = append(whereValues, fmt.Sprintf("%%%s%%", title))
+		whereQuerys = append(whereQuerys, repos.subQueryTitle)
+	}
+
 	return fmt.Sprintf("WHERE %s", strings.Join(whereQuerys, " AND ")), whereValues
 }
 
 func (repos SelectStreamingSearchRepository) Execute(data apireference.StreamingSearchValues) ([]apireference.ScheduleResponse, utilerror.IError) {
-	members, from, to, _, page := data.Extract()
+	members, from, to, _, page, title := data.Extract()
 
-	whereQuery, whereValues := repos.createQueryWheres(members, from, to)
+	whereQuery, whereValues := repos.createQueryWheres(members, from, to, title)
 
 	offset := 0
 	if page > 0 {
