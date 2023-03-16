@@ -17,9 +17,10 @@ type CountStreamingSearchRepository struct {
 	mainQuery            string
 	subQueryMember       string
 	subQueryTags         string
-	subQueryTitle        string
 	subQueryFrom         string
 	subQueryTo           string
+	subQueryTitle        string
+	subQueryisViewing    string
 	defaultFrom          string
 	replaceTargetsString string
 	replaceChar          string
@@ -35,6 +36,7 @@ func NewCountStreamingSearchRepository(
 	subQueryFrom string,
 	subQueryTo string,
 	subQueryTitle string,
+	subQueryisViewing string,
 	defaultFrom string,
 	replaceTargetsString string,
 	replaceChar string,
@@ -49,6 +51,7 @@ func NewCountStreamingSearchRepository(
 		subQueryFrom:         subQueryFrom,
 		subQueryTo:           subQueryTo,
 		subQueryTitle:        subQueryTitle,
+		subQueryisViewing:    subQueryisViewing,
 		defaultFrom:          defaultFrom,
 		replaceTargetsString: replaceTargetsString,
 		replaceChar:          replaceChar,
@@ -71,6 +74,9 @@ func (repos CountStreamingSearchRepository) scan(s sqlwrapper.IScan) (int, utile
 func (repos CountStreamingSearchRepository) createQueryWheres(members []string, from, to wrappedbasics.IWrappedTime, title string) (string, []interface{}) {
 	var whereQuerys []string
 	var whereValues []interface{}
+
+	whereQuerys = append(whereQuerys, repos.subQueryisViewing)
+	whereValues = append(whereValues, repos.viewStatus)
 
 	whereQuerys = append(whereQuerys, repos.subQueryFrom)
 

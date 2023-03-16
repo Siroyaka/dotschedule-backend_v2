@@ -37,12 +37,13 @@ const (
 	config_getstreamingsearch      = "GET_STREAMING_SEARCH"
 	config_countstreamingsearchlen = "COUNT_STREAMING_SEARCH_LEN"
 
-	config_subquery                 = "SUB"
-	config_substreamingsearchmember = "STREAMING_SEARCH_MEMBER"
-	config_substreamingsearchtag    = "STREAMING_SEARCH_TAG"
-	config_substreamingsearchfrom   = "STREAMING_SEARCH_FROM"
-	config_substreamingsearchto     = "STREAMING_SEARCH_TO"
-	config_substreamingsearchtitle  = "STREAMING_SEARCH_TITLE"
+	config_subquery                    = "SUB"
+	config_substreamingsearchmember    = "STREAMING_SEARCH_MEMBER"
+	config_substreamingsearchtag       = "STREAMING_SEARCH_TAG"
+	config_substreamingsearchfrom      = "STREAMING_SEARCH_FROM"
+	config_substreamingsearchto        = "STREAMING_SEARCH_TO"
+	config_substreamingsearchtitle     = "STREAMING_SEARCH_TITLE"
+	config_substreamingsearchisviewing = "STREAMING_SEARCH_ISVIEWING"
 
 	config_searchconstructions = "SEARCH_CONSTRUCTIONS"
 	config_searchdefaultfrom   = "DEFAULT_FROM"
@@ -108,6 +109,7 @@ func main() {
 		subqueryConfig.Read(config_substreamingsearchfrom),
 		subqueryConfig.Read(config_substreamingsearchto),
 		subqueryConfig.Read(config_substreamingsearchtitle),
+		subqueryConfig.Read(config_substreamingsearchisviewing),
 		searchConfig.Read(config_searchdefaultfrom),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
@@ -124,6 +126,7 @@ func main() {
 		subqueryConfig.Read(config_substreamingsearchfrom),
 		subqueryConfig.Read(config_substreamingsearchto),
 		subqueryConfig.Read(config_substreamingsearchtitle),
+		subqueryConfig.Read(config_substreamingsearchisviewing),
 		searchConfig.Read(config_searchdefaultfrom),
 		sqlConfig.Read(config_sqlReplaceTargetString),
 		sqlConfig.Read(config_sqlReplacedChar),
