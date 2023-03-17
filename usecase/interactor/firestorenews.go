@@ -76,7 +76,9 @@ func (intr FirestoreNewsInteractor) DataFetchFromFirestore() ([]domain.Firestore
 
 func (intr FirestoreNewsInteractor) firestoreNewsToFullSchedule(data domain.FirestoreNews) domain.FullScheduleData {
 	fullScheduleData := domain.NewEmptyFullScheduleData(data.VideoID, intr.platform)
-	fullScheduleData = fullScheduleData.ImportStatusFromFirestore(data.VideoStatus)
+
+	// every firestore news data are status 10.
+	fullScheduleData = fullScheduleData.ImportStatusFromFirestore(10)
 	return fullScheduleData
 }
 

@@ -7,15 +7,13 @@ import (
 type FirestoreNews struct {
 	UpdateAt     wrappedbasics.IWrappedTime
 	VideoID      string
-	VideoStatus  int
 	Participants []string
 }
 
-func NewFirestoreNews(videoID string, videoStatus int, updateAt wrappedbasics.IWrappedTime, participants []string) FirestoreNews {
+func NewFirestoreNews(videoID string, updateAt wrappedbasics.IWrappedTime, participants []string) FirestoreNews {
 	return FirestoreNews{
 		UpdateAt:     updateAt,
 		VideoID:      videoID,
-		VideoStatus:  videoStatus,
 		Participants: participants,
 	}
 }

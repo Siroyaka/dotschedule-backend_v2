@@ -41,7 +41,7 @@ func NewGetFirestoreNewsRepository(
 	}
 }
 
-func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus int, updateAt string, participants map[string]bool) (domain.FirestoreNews, utilerror.IError) {
+func (repos GetFirestoreNewsRepository) converter(videoID string, updateAt string, participants map[string]bool) (domain.FirestoreNews, utilerror.IError) {
 	var participantsList []string
 	for k := range participants {
 		participantsList = append(participantsList, k)
@@ -52,21 +52,15 @@ func (repos GetFirestoreNewsRepository) converter(videoID string, videoStatus in
 		return domain.FirestoreNews{}, err.WrapError()
 	}
 
-	return domain.NewFirestoreNews(videoID, videoStatus, updateAtTime, participantsList), nil
+	return domain.NewFirestoreNews(videoID, updateAtTime, participantsList), nil
 }
 
-func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interface{}) (videoID string, videoStatus int, updateAt string, participants map[string]bool, err utilerror.IError) {
+func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interface{}) (videoID string, updateAt string, participants map[string]bool, err utilerror.IError) {
 	videoID, err = utility.ConvertFromInterfaceType[string](m[repos.documentNameVideoID])
 	if err != nil {
 		err = err.WrapError("videoId type error")
 		return
 	}
-	i64vs, err := utility.ConvertFromInterfaceType[int64](m[repos.documentNameVideoStatus])
-	if err != nil {
-		err = err.WrapError("videoStatus type error")
-		return
-	}
-	videoStatus = int(i64vs)
 	updateAt, err = utility.ConvertFromInterfaceType[string](m[repos.documentNameUpdateAt])
 	if err != nil {
 		err = err.WrapError("updateAt type error")
@@ -83,6 +77,7 @@ func (repos GetFirestoreNewsRepository) parseFirestoreData(m map[string]interfac
 	for key := range partMapInterface {
 		participants[key] = true
 	}
+
 	return
 }
 
@@ -102,13 +97,13 @@ func (repos GetFirestoreNewsRepository) Execute(
 		}
 		dataMap := snapshot.Data()
 
-		videoId, videoStatus, updateAt, participants, err := repos.parseFirestoreData(dataMap)
+		videoId, updateAt, participants, err := repos.parseFirestoreData(dataMap)
 		if err != nil {
 			logger.Error(err)
 			continue
 		}
 
-		data, err := repos.converter(videoId, videoStatus, updateAt, participants)
+		data, err := repos.converter(videoId, updateAt, participants)
 		if err != nil {
 			logger.Error(err.WrapError("convert"))
 			continue
