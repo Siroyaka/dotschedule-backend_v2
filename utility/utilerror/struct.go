@@ -90,6 +90,10 @@ func createError(errType ErrorType, errorInfo ...any) (code string, issue string
 		code = err_sql_datascan_code
 		err = errors.New(err_sql_datascan_msg)
 		return
+	case ERR_SQL_DATAUPDATE_COUNT0:
+		code = err_sql_dataupdate_count0_code
+		err = errors.New(err_sql_dataupdate_count0_msg)
+		return
 	case ERR_OUTOFINDEX:
 		code = err_outofindex_code
 		err = errors.New(err_outofindex_msg)

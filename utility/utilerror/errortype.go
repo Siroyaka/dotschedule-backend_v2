@@ -36,6 +36,10 @@ const (
 	err_sql_datascan_code           = "80003"
 	err_sql_datascan_msg            = "sql datascan error"
 
+	ERR_SQL_DATAUPDATE_COUNT0      ErrorType = "SQL_DDATAUPDATE_COUNT_0"
+	err_sql_dataupdate_count0_code           = "80010"
+	err_sql_dataupdate_count0_msg            = "sql update result count = 0"
+
 	ERR_HTTP_REQUEST_ERROR      ErrorType = "HTTP_REQUEST_ERROR"
 	err_http_request_error_code           = "81000"
 	err_http_request_error_msg            = "http request error"

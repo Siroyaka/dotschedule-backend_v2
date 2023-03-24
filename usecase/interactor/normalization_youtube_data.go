@@ -262,7 +262,7 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 	for _, data := range targetSchedules {
 		now := wrappedbasics.Now()
 
-		logger.Info(fmt.Sprintf("target id = %s", data.StreamingID))
+		logger.Debug(fmt.Sprintf("target id = %s", data.StreamingID))
 
 		youtubeVideoData, err := intr.youtubeVideoListAPIRepos.Execute(data.StreamingID)
 		if err != nil {
@@ -271,43 +271,51 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 		}
 
 		if youtubeVideoData.IsEmpty() {
-			logger.Info(fmt.Sprintf("notfound from youtube data api. change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+			logStreamerName := "UNKNOWN"
+			logTitle := "UNKNOWN"
+			if data.StreamerName != "" {
+				logStreamerName = data.StreamerName
+			}
+			if data.Title != "" {
+				logTitle = data.Title
+			}
+			logger.Info(fmt.Sprintf("notfound from youtube data api. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", data.StreamingID, logTitle, logStreamerName))
 
 			if updateResult, err := intr.updateScheduleToStatus100Repos.Execute(data); err != nil {
-				logger.Error(err.WrapError(fmt.Sprintf("{\"StreamingID\": \"%s\"}", data.StreamingID)))
+				logger.Error(err.WrapError(fmt.Sprintf("schedule update to 100 failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", data.StreamingID, logTitle, logStreamerName)))
 				continue
 			} else if updateResult.Count == 0 {
-				logger.Error(utilerror.New(fmt.Sprintf("schedule update to 100 count 0. { \"StreamingID\": \"%s\"}", data.StreamingID), ""))
+				logger.Error(utilerror.New(fmt.Sprintf("schedule update to 100 failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", data.StreamingID, logTitle, logStreamerName), utilerror.ERR_SQL_DATAUPDATE_COUNT0))
 				continue
 			}
-			logger.Info(fmt.Sprintf("Finished change status to 100. { \"StreamingID\": \"%s\" }", data.StreamingID))
+			logger.Info(fmt.Sprintf("change status to 100 finished. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", data.StreamingID, logTitle, logStreamerName))
 			continue
 		}
 
 		// youtube video data to fullschedule data
 		afterScheduleData, err := intr.makeFullSchedule(youtubeVideoData, data, streamerMasterMap, now)
 		if err != nil {
-			logger.Error(err.WrapError())
+			logger.Fatal(err.WrapError(fmt.Sprintf("after schedule data create failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", data.StreamingID, data.Title, data.StreamerName)))
 			continue
 		}
 
 		if (data.Status == "2" || data.Status == "3") && data.Status == afterScheduleData.Status {
 			// status 2 or 3 ... status not change that not update
-			logger.Info(fmt.Sprintf("data status not change. not update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
+			logger.Info(fmt.Sprintf("data status not change. not update. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName))
 			continue
 		}
-
-		logger.Info(fmt.Sprintf("schedule update. { id: %s, streamer_name: %s, title: %s }", afterScheduleData.StreamingID, afterScheduleData.StreamerName, afterScheduleData.Title))
 
 		updateResult, err := intr.updateScheduleRepos.Execute(afterScheduleData)
 		if err != nil {
-			logger.Error(err.WrapError())
+			logger.Error(err.WrapError(fmt.Sprintf("schedule update failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName)))
 			continue
 		}
 		if updateResult.Count == 0 {
-			logger.Error(utilerror.New(fmt.Sprintf("update count = 0, id = %s", data.StreamingID), ""))
+			logger.Error(utilerror.New(fmt.Sprintf("schedule update failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName), utilerror.ERR_SQL_DATAUPDATE_COUNT0))
 			continue
 		}
+
+		logger.Info(fmt.Sprintf("schedule update finished. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName))
 
 		streamingIdWithPlatformType := reference.NewStreamingIDWithPlatformType(data.StreamingID, intr.platformType)
 
@@ -320,15 +328,15 @@ func (intr *NormalizationYoutubeDataInteractor) Normalization() utilerror.IError
 		participantsIdNameMap := dbmodels.KeyValueToMap(participantsIdNames)
 
 		if intr.isParticipantsUpdate(afterScheduleData, participantsIdNameMap) {
-			logger.Info(fmt.Sprintf("participants data insert. streamerID = %s", afterScheduleData.StreamerID))
-
 			participantsSingleInsertData := participants.NewSingleInsertData(data.StreamingID, intr.platformType, afterScheduleData.StreamerID, now)
 
 			if response, err := intr.insertParticipantsRepos.Execute(participantsSingleInsertData); err != nil {
-				logger.Error(err.WrapError())
+				logger.Error(err.WrapError(fmt.Sprintf("participants update failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName)))
 			} else if response.Count == 0 {
-				logger.Error(utilerror.New(fmt.Sprintf("participants update count = 0, id = %s", data.StreamingID), ""))
+				logger.Error(utilerror.New(fmt.Sprintf("participants update failed. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName), utilerror.ERR_SQL_DATAUPDATE_COUNT0))
 			}
+
+			logger.Info(fmt.Sprintf("participants data insert finished. log_data: { \"streaming_id\": \"%s\", \"title\": \"%s\", \"streamer_name\": \"%s\" }", afterScheduleData.StreamingID, afterScheduleData.Title, afterScheduleData.StreamerName))
 
 		}
 

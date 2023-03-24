@@ -22,9 +22,9 @@ func NewSelectNormalizeSchedulesRepository(sqlHandler abstruct.SqlHandler, query
 
 func (repos SelectNormalizeSchedulesRepository) scheduleScan(s sqlwrapper.IScan) (domain.FullScheduleData, utilerror.IError) {
 	var streaming_id, platform_type, status, insert_at string
-	var publish_datetime sql.NullString
+	var publish_datetime, streamer_name, title sql.NullString
 
-	if err := s.Scan(&streaming_id, &platform_type, &status, &publish_datetime, &insert_at); err != nil {
+	if err := s.Scan(&streaming_id, &platform_type, &streamer_name, &title, &status, &publish_datetime, &insert_at); err != nil {
 		return domain.NewEmptyFullScheduleData("", ""), utilerror.New(err.Error(), "")
 	}
 
@@ -33,6 +33,12 @@ func (repos SelectNormalizeSchedulesRepository) scheduleScan(s sqlwrapper.IScan)
 	res.InsertAt = insert_at
 	if !publish_datetime.Valid {
 		res.PublishDatetime = publish_datetime.String
+	}
+	if !streamer_name.Valid {
+		res.StreamerName = streamer_name.String
+	}
+	if !title.Valid {
+		res.Title = title.String
 	}
 
 	return res, nil
