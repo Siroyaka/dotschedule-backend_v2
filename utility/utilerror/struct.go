@@ -145,6 +145,13 @@ func createError(errType ErrorType, errorInfo ...any) (code string, issue string
 		code = err_http_request_body_readerror_code
 		err = errors.New(err_http_request_body_readerror_msg)
 		return
+	case ERR_FIRESTORE_DATA_NOTEXISTS:
+		code = err_firestore_data_notexists_code
+		err = errors.New(err_firestore_data_notexists_msg)
+		if len(errorInfo) == 1 {
+			issue = fmt.Sprintf("%s does not exists", errorInfo[0])
+		}
+		return
 	case ERR_RSS_PARSE:
 		code = err_rss_parse_code
 		err = errors.New(err_rss_parse_msg)

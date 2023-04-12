@@ -29,7 +29,9 @@ type SelectStreamingSearchRepository struct {
 	replaceChar          string
 	replaceCharSplitter  string
 	viewStatus           int
-	limit                int
+	subQueryOrderNewer   string
+	subQueryOrderOlder   string
+	subQueryPageLimit    string
 }
 
 func NewSelectStreamingSearchRepository(
@@ -46,7 +48,9 @@ func NewSelectStreamingSearchRepository(
 	replaceChar string,
 	replaceCharSplitter string,
 	viewStatus int,
-	limit int,
+	subQueryOrderNewer string,
+	subQueryOrderOlder string,
+	subQueryPageLimit string,
 ) SelectStreamingSearchRepository {
 	return SelectStreamingSearchRepository{
 		selectWrapper:        sqlwrapper.NewSelectWrapper[apireference.ScheduleResponse](sqlHandler, ""),
@@ -62,7 +66,9 @@ func NewSelectStreamingSearchRepository(
 		replaceChar:          replaceChar,
 		replaceCharSplitter:  replaceCharSplitter,
 		viewStatus:           viewStatus,
-		limit:                limit,
+		subQueryOrderNewer:   subQueryOrderNewer,
+		subQueryOrderOlder:   subQueryOrderOlder,
+		subQueryPageLimit:    subQueryPageLimit,
 	}
 }
 
@@ -79,7 +85,6 @@ func (repos SelectStreamingSearchRepository) scan(s sqlwrapper.IScan) (apirefere
 	var streamer_name string
 	var streamer_id string
 	var streamer_icon string
-	var streamer_link string
 	var participants_data string
 	if err := s.Scan(
 		&streaming_id,
@@ -94,7 +99,6 @@ func (repos SelectStreamingSearchRepository) scan(s sqlwrapper.IScan) (apirefere
 		&streamer_name,
 		&streamer_id,
 		&streamer_icon,
-		&streamer_link,
 		&participants_data,
 	); err != nil {
 		return apireference.ScheduleResponse{}, utilerror.New(err.Error(), "")
@@ -124,11 +128,9 @@ func (repos SelectStreamingSearchRepository) scan(s sqlwrapper.IScan) (apirefere
 	}
 
 	streamerData := apidomain.StreamerData{
-		Name:     streamer_name,
-		ID:       streamer_id,
-		Icon:     streamer_icon,
-		Link:     streamer_link,
-		Platform: platform,
+		Name: streamer_name,
+		ID:   streamer_id,
+		Icon: streamer_icon,
 	}
 
 	participants, ierr := utility.JsonUnmarshal[[]apidomain.StreamerData](participants_data)
@@ -195,20 +197,30 @@ func (repos SelectStreamingSearchRepository) createQueryWheres(members []string,
 }
 
 func (repos SelectStreamingSearchRepository) Execute(data apireference.StreamingSearchValues) ([]apireference.ScheduleResponse, utilerror.IError) {
-	members, from, to, _, page, title := data.Extract()
+	members, from, to, _, page, title, maxResult, sortOrder := data.Extract()
 
 	whereQuery, whereValues := repos.createQueryWheres(members, from, to, title)
 
 	offset := 0
 	if page > 0 {
-		offset = (page - 1) * repos.limit
+		offset = (page - 1) * maxResult
 	}
 
 	queryTemplate := utility.ReplaceConstString(repos.mainQuery, whereQuery, repos.replaceTargetsString)
 
+	sortOrderQuery := ""
+	if sortOrder == "NEWER" {
+		sortOrderQuery = repos.subQueryOrderNewer
+	} else if sortOrder == "OLDER" {
+		sortOrderQuery = repos.subQueryOrderOlder
+	}
+
+	// query end string append
+	queryTemplate = fmt.Sprintf("%s %s %s", queryTemplate, sortOrderQuery, repos.subQueryPageLimit)
+
 	repos.selectWrapper.SetQuery(queryTemplate)
 
-	result, err := repos.selectWrapper.SelectPrepare(repos.scan, utility.ToInterfaceSlice(whereValues, repos.limit, offset)...)
+	result, err := repos.selectWrapper.SelectPrepare(repos.scan, utility.ToInterfaceSlice(whereValues, maxResult, offset)...)
 	if err != nil {
 		return result, err.WrapError()
 	}

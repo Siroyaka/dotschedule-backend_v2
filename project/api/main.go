@@ -44,10 +44,14 @@ const (
 	config_substreamingsearchto        = "STREAMING_SEARCH_TO"
 	config_substreamingsearchtitle     = "STREAMING_SEARCH_TITLE"
 	config_substreamingsearchisviewing = "STREAMING_SEARCH_ISVIEWING"
+	config_substreamingsearchsortnewer = "STREAMING_SEARCH_SORT_NEWER"
+	config_substreamingsearchsortolder = "STREAMING_SEARCH_SORT_OLDER"
+	config_substreamingsearchpagelimit = "STREAMING_SEARCH_PAGE_LIMIT"
 
 	config_searchconstructions = "SEARCH_CONSTRUCTIONS"
 	config_searchdefaultfrom   = "DEFAULT_FROM"
 	config_searchlenLimit      = "LIMIT"
+	config_searchdefaultsort   = "DEFAULT_SORT"
 
 	config_localTimeDifference = "LOCAL_TIMEDIFFERENCE"
 	config_viewingStatus       = "VIEWING_STATUS"
@@ -88,12 +92,6 @@ func main() {
 	sqlHandler := infrastructure.NewSqliteHandlerCGOLess(sqlConfig.Read(config_sqlPath))
 	defer sqlHandler.Close()
 
-	scheduleRepository := sqlapi.NewSelectSchedulesRepository(
-		sqlHandler,
-		queryConfig.Read(config_getschedule),
-		rootConfig.ReadInteger(config_viewingStatus),
-	)
-
 	selectDaysParticipantsRepository := sqlapi.NewSelectDaysParticipantsRepository(
 		sqlHandler,
 		queryConfig.Read(config_getmonth),
@@ -115,7 +113,9 @@ func main() {
 		sqlConfig.Read(config_sqlReplacedChar),
 		sqlConfig.Read(config_sqlReplacedCharSplitter),
 		rootConfig.ReadInteger(config_viewingStatus),
-		searchConfig.ReadInteger(config_searchlenLimit),
+		subqueryConfig.Read(config_substreamingsearchsortnewer),
+		subqueryConfig.Read(config_substreamingsearchsortolder),
+		subqueryConfig.Read(config_substreamingsearchpagelimit),
 	)
 
 	countRepos := sqlapi.NewCountStreamingSearchRepository(
@@ -134,10 +134,6 @@ func main() {
 		rootConfig.ReadInteger(config_viewingStatus),
 	)
 
-	scheduleInteractor := interactor.NewDayScheduleInteractor(
-		scheduleRepository,
-	)
-
 	monthDataInteractor := interactor.NewDaysParticipantsInteractor(
 		selectDaysParticipantsRepository,
 	)
@@ -145,11 +141,6 @@ func main() {
 	streamingSearchInteractor := interactor.NewStreamingSearchInteractor(
 		searchRepos,
 		countRepos,
-	)
-
-	scController := controller.NewScheduleController(
-		scheduleInteractor,
-		rootConfig.Read(config_contentType),
 	)
 
 	monthController := controller.NewMonthRequestController(
@@ -162,10 +153,10 @@ func main() {
 		streamingSearchInteractor,
 		rootConfig.Read(config_contentType),
 		rootConfig.ReadInteger(config_localTimeDifference),
+		searchConfig.ReadInteger(config_searchlenLimit),
 	)
 
 	router := infrastructure.NewRouter(rootConfig.Read(config_port))
-	router.SetHandle(rootConfig.Read(config_scheduleRoute), scController.RequestHandler())
 	router.SetHandle(rootConfig.Read(config_monthRoute), monthController.RequestHandler())
 	router.SetHandle(rootConfig.Read(config_streamSearchRoute), streamSearchController.RequestHandler())
 	router.SetHandleFunc(heartBeatRoute, heartBeat)

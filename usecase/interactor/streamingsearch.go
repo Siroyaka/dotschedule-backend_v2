@@ -33,6 +33,8 @@ func (intr StreamingSearchInteractor) CreateValue(
 	tags string,
 	page int,
 	titleValue string,
+	maxResultNum int,
+	sortOrderText string,
 ) (apireference.StreamingSearchValues, utilerror.IError) {
 	textRegex := regexp.MustCompile("([0-9]|[a-z])*")
 
@@ -64,7 +66,14 @@ func (intr StreamingSearchInteractor) CreateValue(
 		}
 	}
 
-	return apireference.NewStreamingSearchValues(memberIDList, from, to, tagList, page, titleValue), nil
+	sortOrder := ""
+	if sortOrderText == "newer" {
+		sortOrder = "NEWER"
+	} else if sortOrderText == "older" {
+		sortOrder = "OLDER"
+	}
+
+	return apireference.NewStreamingSearchValues(memberIDList, from, to, tagList, page, titleValue, maxResultNum, sortOrder), nil
 }
 
 func (intr StreamingSearchInteractor) Count(searchValue apireference.StreamingSearchValues) (int, utilerror.IError) {

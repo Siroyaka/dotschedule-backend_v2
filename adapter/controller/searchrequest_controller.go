@@ -18,17 +18,20 @@ type StreamSearchRequestController struct {
 	streamingSearchIntr interactor.StreamingSearchInteractor
 	contentType         string
 	localTimeDifference int
+	defaultMaxResult    int
 }
 
 func NewStreamSearchRequestController(
 	streamingSearchIntr interactor.StreamingSearchInteractor,
 	contentType string,
 	localTimeDifference int,
+	defaultMaxResult int,
 ) StreamSearchRequestController {
 	return StreamSearchRequestController{
 		streamingSearchIntr: streamingSearchIntr,
 		contentType:         contentType,
 		localTimeDifference: localTimeDifference,
+		defaultMaxResult:    defaultMaxResult,
 	}
 }
 
@@ -36,27 +39,48 @@ func (c StreamSearchRequestController) RequestHandler() http.Handler {
 	return http.HandlerFunc(c.searchRequest)
 }
 
-func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string, string) {
+type ApiRequestQueries struct {
+	member,
+	from,
+	to,
+	tag,
+	page,
+	title,
+	maxresult string
+}
+
+type ApiRequestValues struct {
+	member    string
+	from, to  wrappedbasics.IWrappedTime
+	tag       string
+	page      int
+	title     string
+	maxresult int
+}
+
+func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string, string, string, string) {
 	member := r.Get("member")
 	from := r.Get("from")
 	to := r.Get("to")
 	tag := r.Get("tag")
 	page := r.Get("page")
 	title := r.Get("title")
-	return member, from, to, tag, page, title
+	maxresult := r.Get("maxresult")
+	sortOrderString := r.Get("sort")
+	return member, from, to, tag, page, title, maxresult, sortOrderString
 }
 
-func (c StreamSearchRequestController) paramsParse(from, to, page string) (wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, int, utilerror.IError) {
+func (c StreamSearchRequestController) paramsParse(from, to, page, maxresult string) (wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, int, int, utilerror.IError) {
 	pageCount := 1
 	if page != "" {
 		var err error
 		pageCount, err = strconv.Atoi(page)
 		if err != nil {
-			return nil, nil, 0, utilerror.New(err.Error(), "")
+			return nil, nil, 0, 0, utilerror.New(err.Error(), "")
 		}
 
 		if pageCount < 0 {
-			return nil, nil, 0, utilerror.New(err.Error(), "")
+			return nil, nil, 0, 0, utilerror.New(err.Error(), "")
 		}
 	}
 
@@ -66,7 +90,7 @@ func (c StreamSearchRequestController) paramsParse(from, to, page string) (wrapp
 		var ierr utilerror.IError
 		fromDt, ierr = wrappedbasics.NewWrappedTimeFromLocal(from, wrappedbasics.WrappedTimeProps.DateFormat())
 		if ierr != nil {
-			return nil, nil, 0, ierr.WrapError()
+			return nil, nil, 0, 0, ierr.WrapError()
 		}
 	}
 
@@ -79,7 +103,23 @@ func (c StreamSearchRequestController) paramsParse(from, to, page string) (wrapp
 		}
 	}
 
-	return fromDt, toDt, pageCount, nil
+	maxResultNum := c.defaultMaxResult
+	if maxresult != "" {
+		convertValue, err := strconv.Atoi(maxresult)
+		if err != nil {
+			return nil, nil, 0, 0, utilerror.New(err.Error(), "")
+		}
+
+		if convertValue < 0 {
+			return nil, nil, 0, 0, utilerror.New(err.Error(), "")
+		}
+
+		if convertValue < maxResultNum {
+			maxResultNum = convertValue
+		}
+	}
+
+	return fromDt, toDt, pageCount, maxResultNum, nil
 }
 
 func (c StreamSearchRequestController) requestValueLogging(
@@ -89,6 +129,8 @@ func (c StreamSearchRequestController) requestValueLogging(
 	tag string,
 	page int,
 	titleValue string,
+	maxResultNum int,
+	sortOrderString string,
 ) {
 	var loggingValues []string
 
@@ -116,6 +158,14 @@ func (c StreamSearchRequestController) requestValueLogging(
 		loggingValues = append(loggingValues, fmt.Sprintf("\"title\": \"%s\"", titleValue))
 	}
 
+	if maxResultNum != 0 {
+		loggingValues = append(loggingValues, fmt.Sprintf("\"maxresult\": \"%d\"", maxResultNum))
+	}
+
+	if sortOrderString != "" {
+		loggingValues = append(loggingValues, fmt.Sprintf("\"sort\": \"%s\"", sortOrderString))
+	}
+
 	if len(loggingValues) == 0 {
 		return
 	}
@@ -128,9 +178,9 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 	// fromの翌日日付がtoならfromの日からtoの日の合わせて2日分となるようにすること
 	w.Header().Set("Content-Type", c.contentType)
 
-	member, fromValue, toValue, tag, pageValue, titleValue := c.readRequestParams(r.URL.Query())
+	member, fromValue, toValue, tag, pageValue, titleValue, maxresult, sortOrderString := c.readRequestParams(r.URL.Query())
 
-	from, to, page, err := c.paramsParse(fromValue, toValue, pageValue)
+	from, to, page, maxResultNum, err := c.paramsParse(fromValue, toValue, pageValue, maxresult)
 
 	if err != nil {
 		logger.Info(err.WrapError().Error())
@@ -146,6 +196,8 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		tag,
 		page,
 		titleValue,
+		maxResultNum,
+		sortOrderString,
 	)
 
 	// toは1日あとの日付にここで加工する
@@ -153,7 +205,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		to = to.Add(0, 0, 1, 0, 0, 0)
 	}
 
-	value, err := c.streamingSearchIntr.CreateValue(member, from, to, tag, page, titleValue)
+	value, err := c.streamingSearchIntr.CreateValue(member, from, to, tag, page, titleValue, maxResultNum, sortOrderString)
 	if err != nil {
 		logger.Info(err.WrapError().Error())
 		w.WriteHeader(400)

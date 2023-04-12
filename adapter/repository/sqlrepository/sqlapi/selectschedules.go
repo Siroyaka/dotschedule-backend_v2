@@ -43,7 +43,6 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 	var streamer_name string
 	var streamer_id string
 	var streamer_icon string
-	var streamer_link string
 	var participants_data string
 	if err := s.Scan(
 		&streaming_id,
@@ -58,7 +57,6 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 		&streamer_name,
 		&streamer_id,
 		&streamer_icon,
-		&streamer_link,
 		&participants_data,
 	); err != nil {
 		return apireference.ScheduleResponse{}, utilerror.New(err.Error(), "")
@@ -88,11 +86,9 @@ func (repos SelectSchedulesRepository) scan(s sqlwrapper.IScan) (apireference.Sc
 	}
 
 	streamerData := apidomain.StreamerData{
-		Name:     streamer_name,
-		ID:       streamer_id,
-		Icon:     streamer_icon,
-		Link:     streamer_link,
-		Platform: platform,
+		Name: streamer_name,
+		ID:   streamer_id,
+		Icon: streamer_icon,
 	}
 
 	participants, ierr := utility.JsonUnmarshal[[]apidomain.StreamerData](participants_data)

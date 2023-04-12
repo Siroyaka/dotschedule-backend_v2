@@ -85,6 +85,19 @@ func ConvertFromInterfaceType[X any](value interface{}) (res X, err utilerror.IE
 	}
 }
 
+func PickupMapInterfaceData[X any](mapData map[string]interface{}, key string) (res X, notexists bool, err utilerror.IError) {
+	if _, ok := mapData[key]; !ok {
+		notexists = true
+		return
+	}
+
+	notexists = false
+
+	res, err = ConvertFromInterfaceType[X](mapData[key])
+
+	return
+}
+
 type HashSet[X comparable] struct {
 	set map[X]struct{}
 }

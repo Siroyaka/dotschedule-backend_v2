@@ -121,7 +121,7 @@ func (repos CountStreamingSearchRepository) createQueryWheres(members []string, 
 }
 
 func (repos CountStreamingSearchRepository) Execute(data apireference.StreamingSearchValues) (int, utilerror.IError) {
-	members, from, to, _, _, title := data.Extract()
+	members, from, to, _, _, title, _, _ := data.Extract()
 
 	whereQuery, whereValues := repos.createQueryWheres(members, from, to, title)
 

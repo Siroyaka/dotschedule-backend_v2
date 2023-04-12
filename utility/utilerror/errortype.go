@@ -40,6 +40,14 @@ const (
 	err_sql_dataupdate_count0_code           = "80010"
 	err_sql_dataupdate_count0_msg            = "sql update result count = 0"
 
+	ERR_FILE_READ      ErrorType = "FILE_READ_ERROR"
+	err_file_read_code           = "80100"
+	err_file_read_msg            = "file read error"
+
+	ERR_DIRECTORY_READ      ErrorType = "DIRECTORY_READ_ERROR"
+	err_directory_read_code           = "80101"
+	err_directory_read_msg            = "directory read error"
+
 	ERR_HTTP_REQUEST_ERROR      ErrorType = "HTTP_REQUEST_ERROR"
 	err_http_request_error_code           = "81000"
 	err_http_request_error_msg            = "http request error"
@@ -52,13 +60,9 @@ const (
 	err_http_request_body_readerror_code           = "81101"
 	err_http_request_body_readerror_msg            = "http body read error"
 
-	ERR_FILE_READ      ErrorType = "FILE_READ_ERROR"
-	err_file_read_code           = "80100"
-	err_file_read_msg            = "file read error"
-
-	ERR_DIRECTORY_READ      ErrorType = "DIRECTORY_READ_ERROR"
-	err_directory_read_code           = "80101"
-	err_directory_read_msg            = "directory read error"
+	ERR_FIRESTORE_DATA_NOTEXISTS      ErrorType = "FIRESTORE_DATA_NOTEXISTS"
+	err_firestore_data_notexists_code           = "82001"
+	err_firestore_data_notexists_msg            = "firestore data does not exists"
 
 	// 9**** common error
 	ERR_OUTOFINDEX      ErrorType = "OUT_OF_INDEX"
