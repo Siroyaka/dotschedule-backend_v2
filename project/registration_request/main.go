@@ -27,10 +27,15 @@ const (
 	config_sqlReplacedChar         = "REPLACED_CHAR"
 	config_sqlReplacedCharSplitter = "REPLACED_CHAR_SPLITTER"
 
-	config_videoIDDocument      = "VIDEOID"
-	config_videoStatusDocument  = "VIDEOSTATUS"
+	config_IDDocument           = "ID"
+	config_platformDocument     = "PLATFORM"
+	config_URLDocument          = "URL"
+	config_updateAtDocument     = "UPDATE_AT"
 	config_participantsDocument = "PARTICIPANTS"
-	config_updateAtDocument     = "UPDATEAT"
+	config_titleDocument        = "TITLE"
+	config_streamerNameDocument = "STREAMER_NAME"
+	config_streamerIDDocument   = "STREAMER_ID"
+	config_startDateDocument    = "START_DATE"
 
 	config_credentialFilePath     = "CREDENTIALS_FILE"
 	config_project_id             = "GCP_PROJECT_ID"
@@ -43,8 +48,6 @@ const (
 	config_scheduleCountQuery  = "COUNT_SCHEDULE"
 	config_scheduleInsertQuery = "INSERT_SCHEDULE"
 	config_scheduleUpdateQuery = "UPDATE_SCHEDULE"
-
-	config_platformIdGetQuery = "GET_STREAMERID_OF_PLATFORM"
 
 	config_participantsGetQuery    = "GET_PARTICIPANTS"
 	config_participantsInsertQuery = "INSERT_PARTICIPANTS"
@@ -83,15 +86,20 @@ func main() {
 	defer sqlHandler.Close()
 
 	// repository
-	fRepos := otheroutbound.NewGetFirestoreNewsRepository(
+	fRepos := otheroutbound.NewGetFirestoreRegistrationRequestRepository(
 		fs,
 		rootConfig.Read(config_collectionName),
 		rootConfig.Read(config_compareble),
 		rootConfig.Read(config_operator),
-		firestoreDocumentConfig.Read(config_videoIDDocument),
-		firestoreDocumentConfig.Read(config_videoStatusDocument),
+		firestoreDocumentConfig.Read(config_IDDocument),
+		firestoreDocumentConfig.Read(config_URLDocument),
+		firestoreDocumentConfig.Read(config_platformDocument),
 		firestoreDocumentConfig.Read(config_participantsDocument),
 		firestoreDocumentConfig.Read(config_updateAtDocument),
+		firestoreDocumentConfig.Read(config_startDateDocument),
+		firestoreDocumentConfig.Read(config_streamerIDDocument),
+		firestoreDocumentConfig.Read(config_streamerNameDocument),
+		firestoreDocumentConfig.Read(config_titleDocument),
 	)
 
 	cRepos := sqlcontains.NewContainsScheduleRepository(
@@ -109,17 +117,12 @@ func main() {
 		queryConfig.Read(config_scheduleUpdateQuery),
 	)
 
-	gmRepos := sqlrepository.NewSelectPlatformIDWithStreamerIDRepository(
-		sqlHandler,
-		queryConfig.Read(config_platformIdGetQuery),
-	)
-
 	gpRepos := sqlrepository.NewSelectParticipantsRepository(
 		sqlHandler,
 		queryConfig.Read(config_participantsGetQuery),
 	)
 
-	ipRepos := sqlrepository.NewInsertParticipantsRepository(
+	ipRepos := sqlrepository.NewInsertParticipantsRepository2(
 		sqlHandler,
 		queryConfig.Read(config_participantsInsertQuery),
 		sqlConfig.Read(config_sqlReplaceTargetString),
@@ -136,21 +139,19 @@ func main() {
 	)
 
 	// usecase
-	firestoreNewsIntr := interactor.NewFirestoreNewsInteractor(
+	registrationRequestIntr := interactor.NewRegistrationRequestInteractor(
 		fRepos,
 		cRepos,
 		ifRepos,
 		ufRepos,
-		gmRepos,
 		gpRepos,
 		ipRepos,
 		dpRepos,
 		rootConfig.ReadInteger(config_firestoreNewsTargetMin),
-		rootConfig.Read(config_platform),
 	)
 
 	// controller
-	controller := controller.NewFirestoreNewsController(firestoreNewsIntr)
+	controller := controller.NewFirestoreRegistraitonRequestController(registrationRequestIntr)
 
 	controller.Exec()
 

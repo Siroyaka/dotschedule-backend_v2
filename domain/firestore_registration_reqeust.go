@@ -79,16 +79,12 @@ func (frr FirestoreRegistrationRequest) Tostring() string {
 	return fmt.Sprintf("{ %s }", strings.Join(paramValues, ", "))
 }
 
-func (frr FirestoreRegistrationRequest) createScheduleID() string {
+func (frr FirestoreRegistrationRequest) createStreamingID() string {
 	switch frr.platform {
-	case "YOUTUBE":
+	case "YOUTUBE", "niconico", "TWITTER_SPACE":
 		return frr.id
-	case "niconico":
-		return fmt.Sprintf("niconico_%s", frr.id)
-	case "TWITTER_SPACE":
-		return fmt.Sprintf("twspace_%s", frr.id)
 	default:
-		return fmt.Sprintf("OTHERS_%s", frr.id)
+		return fmt.Sprintf("%s_%s", frr.platform, frr.id)
 	}
 }
 
@@ -96,6 +92,10 @@ func (frr FirestoreRegistrationRequest) createPlatformType() string {
 	switch frr.platform {
 	case "YOUTUBE":
 		return "YOUTUBE"
+	case "niconico":
+		return "NICONICO"
+	case "TWITTER_SPACE":
+		return "TWITTER_SPACE"
 	default:
 		return "OTHERS"
 	}
@@ -103,31 +103,51 @@ func (frr FirestoreRegistrationRequest) createPlatformType() string {
 
 func (frr FirestoreRegistrationRequest) createStatus() string {
 	switch frr.platform {
+	case "YOUTUBE":
+		return "20"
+	case "niconico":
+		return "90"
+	case "TWITTER_SPACE":
+		return "90"
 	default:
-		return "100"
+		return "90"
 	}
 }
 
-func (frr FirestoreRegistrationRequest) createYoutubeFullSchedule() {
+func (frr FirestoreRegistrationRequest) CreateFullschedule() FullScheduleData {
+	streamingID := frr.createStreamingID()
+	platformType := frr.createPlatformType()
+	status := frr.createStatus()
 
+	isViewing := 0
+	isCompleteData := 0
+
+	if status == "90" {
+		isViewing = 1
+		isCompleteData = 1
+	}
+
+	publishDateTime := ""
+	if status == "90" {
+		publishDateTime = frr.startDate.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
+	}
+
+	return FullScheduleData{
+		StreamingID:     streamingID,
+		PlatformType:    platformType,
+		Url:             frr.url,
+		StreamerName:    frr.streamerName,
+		StreamerID:      frr.streamerID,
+		Title:           frr.title,
+		Status:          status,
+		PublishDatetime: publishDateTime,
+		IsViewing:       isViewing,
+		IsCompleteData:  isCompleteData,
+	}
 }
 
-func (frr FirestoreRegistrationRequest) createTWSpaceFullSchedule() {
-
-}
-
-func (frr FirestoreRegistrationRequest) createNiconicoFullSchedule() {
-
-}
-
-func (frr FirestoreRegistrationRequest) createOtherFullSchedule() {
-
-}
-
-func (frr FirestoreRegistrationRequest) CreateFullschedule() {
-
-}
-
-func (frr FirestoreRegistrationRequest) CreateParticipants() {
-
+func (frr FirestoreRegistrationRequest) CreateParticipants() StreamingParticipants {
+	streamingID := frr.createStreamingID()
+	platformType := frr.createPlatformType()
+	return NewStreamingParticipants(streamingID, platformType, frr.participants...)
 }
