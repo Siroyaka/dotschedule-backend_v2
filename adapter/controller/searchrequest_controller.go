@@ -39,26 +39,7 @@ func (c StreamSearchRequestController) RequestHandler() http.Handler {
 	return http.HandlerFunc(c.searchRequest)
 }
 
-type ApiRequestQueries struct {
-	member,
-	from,
-	to,
-	tag,
-	page,
-	title,
-	maxresult string
-}
-
-type ApiRequestValues struct {
-	member    string
-	from, to  wrappedbasics.IWrappedTime
-	tag       string
-	page      int
-	title     string
-	maxresult int
-}
-
-func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string, string, string, string) {
+func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, string, string, string, string, string, string, string, string) {
 	member := r.Get("member")
 	from := r.Get("from")
 	to := r.Get("to")
@@ -67,7 +48,8 @@ func (c StreamSearchRequestController) readRequestParams(r RequestGet) (string, 
 	title := r.Get("title")
 	maxresult := r.Get("maxresult")
 	sortOrderString := r.Get("sort")
-	return member, from, to, tag, page, title, maxresult, sortOrderString
+	reason := r.Get("reason")
+	return member, from, to, tag, page, title, maxresult, sortOrderString, reason
 }
 
 func (c StreamSearchRequestController) paramsParse(from, to, page, maxresult string) (wrappedbasics.IWrappedTime, wrappedbasics.IWrappedTime, int, int, utilerror.IError) {
@@ -131,6 +113,7 @@ func (c StreamSearchRequestController) requestValueLogging(
 	titleValue string,
 	maxResultNum int,
 	sortOrderString string,
+	reason string,
 ) {
 	var loggingValues []string
 
@@ -166,6 +149,10 @@ func (c StreamSearchRequestController) requestValueLogging(
 		loggingValues = append(loggingValues, fmt.Sprintf("\"sort\": \"%s\"", sortOrderString))
 	}
 
+	if reason != "" {
+		loggingValues = append(loggingValues, fmt.Sprintf("\"reason\": \"%s\"", reason))
+	}
+
 	if len(loggingValues) == 0 {
 		return
 	}
@@ -178,7 +165,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 	// fromの翌日日付がtoならfromの日からtoの日の合わせて2日分となるようにすること
 	w.Header().Set("Content-Type", c.contentType)
 
-	member, fromValue, toValue, tag, pageValue, titleValue, maxresult, sortOrderString := c.readRequestParams(r.URL.Query())
+	member, fromValue, toValue, tag, pageValue, titleValue, maxresult, sortOrderString, reason := c.readRequestParams(r.URL.Query())
 
 	from, to, page, maxResultNum, err := c.paramsParse(fromValue, toValue, pageValue, maxresult)
 
@@ -198,6 +185,7 @@ func (c StreamSearchRequestController) searchRequest(w http.ResponseWriter, r *h
 		titleValue,
 		maxResultNum,
 		sortOrderString,
+		reason,
 	)
 
 	// toは1日あとの日付にここで加工する

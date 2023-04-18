@@ -81,7 +81,7 @@ func (frr FirestoreRegistrationRequest) Tostring() string {
 
 func (frr FirestoreRegistrationRequest) createStreamingID() string {
 	switch frr.platform {
-	case "YOUTUBE", "niconico", "TWITTER_SPACE":
+	case "YOUTUBE", "niconico", "TWITTER_SPACE", "TWITTER":
 		return frr.id
 	default:
 		return fmt.Sprintf("%s_%s", frr.platform, frr.id)
@@ -94,8 +94,8 @@ func (frr FirestoreRegistrationRequest) createPlatformType() string {
 		return "YOUTUBE"
 	case "niconico":
 		return "NICONICO"
-	case "TWITTER_SPACE":
-		return "TWITTER_SPACE"
+	case "TWITTER_SPACE", "TWITTER":
+		return "TWITTER"
 	default:
 		return "OTHERS"
 	}
@@ -107,7 +107,7 @@ func (frr FirestoreRegistrationRequest) createStatus() string {
 		return "20"
 	case "niconico":
 		return "90"
-	case "TWITTER_SPACE":
+	case "TWITTER":
 		return "90"
 	default:
 		return "90"
