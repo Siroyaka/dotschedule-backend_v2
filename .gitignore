@@ -28,7 +28,6 @@ project/test_project
 
 **/config.json
 app
-local_test.sh
 
 # 一時的
 .dockerignore
@@ -37,3 +36,7 @@ local_test.sh
 api_dockers/*
 !api_dockers/docker-compose.yml
 !api_dockers/dockerfile
+
+# shell file
+*.sh
+!gobuild.sh
