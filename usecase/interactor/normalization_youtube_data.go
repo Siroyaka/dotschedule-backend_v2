@@ -112,22 +112,6 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 	}
 	result.Status = status
 
-	var publishDateTime wrappedbasics.IWrappedTime
-	datetimeFormat := wrappedbasics.WrappedTimeProps.DateTimeFormat()
-	switch status {
-	case "0":
-		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.Snippet.PublishAt, datetimeFormat)
-	case "1", "2":
-		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ActualStartTime, datetimeFormat)
-	case "3":
-		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ScheduledStartTime, datetimeFormat)
-	}
-
-	if err != nil {
-		return result, err.WrapError()
-	}
-	result.PublishDatetime = publishDateTime.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
-
 	duration := 0
 	if status == "0" || status == "1" {
 		parserResult := intr.durationParser.Set(videoData.ContentDetails.Duration)
@@ -152,6 +136,33 @@ func (intr NormalizationYoutubeDataInteractor) makeFullSchedule(videoData domain
 		result.IsViewing = 1
 		result.IsCompleteData = 0
 	}
+
+	var publishDateTime wrappedbasics.IWrappedTime
+	datetimeFormat := wrappedbasics.WrappedTimeProps.DateTimeFormat()
+	switch status {
+	case "0":
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.Snippet.PublishAt, datetimeFormat)
+	case "1", "2":
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(videoData.LiveStreamingDetails.ActualStartTime, datetimeFormat)
+	case "3":
+		// in upcoming, sometimes there is not ScheduledStartTime.
+		stdt := videoData.LiveStreamingDetails.ScheduledStartTime
+		if stdt == "" {
+			logger.Info(fmt.Sprintf("There is not ScheduledStartTime in upcoming streaming. { \"streaming_id\": \"%s\", \"title\": \"%s\"}", beforeScheduleData.StreamingID, videoData.Snippet.Title))
+			stdt = videoData.Snippet.PublishAt
+			result.IsViewing = 0
+			result.IsCompleteData = 1
+			result.Status = "100"
+		}
+
+		publishDateTime, err = wrappedbasics.NewWrappedTimeFromUTC(stdt, datetimeFormat)
+	}
+
+	if err != nil {
+		return result, err.WrapError()
+	}
+
+	result.PublishDatetime = publishDateTime.ToUTCFormatString(wrappedbasics.WrappedTimeProps.DateTimeFormat())
 
 	result.Title = videoData.Snippet.Title
 	result.ThumbnailLink = videoData.Snippet.Thumbnail
