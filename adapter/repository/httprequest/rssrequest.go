@@ -32,13 +32,18 @@ func (repos RSSRequestRepository) converter(feedText string) (utility.IFeed, uti
 func (repos RSSRequestRepository) Execute(url string) (utility.IFeed, utilerror.IError) {
 	response, err := repos.request.Get(url)
 	if err != nil {
-		return nil, err.WrapError()
+		return nil, err.WrapError("rss data get falied.")
 	}
 	logger.Debug(fmt.Sprintf("http request: {url: %s, status:%s, statusCode:%b}", url, response.Status(), response.StatusCode()))
 
+	body := response.Body()
+	if body == "" {
+		return nil, utilerror.New("RSS responsebody has not content.", utilerror.ERR_RSS_PARSE)
+	}
+
 	feedData, err := repos.converter(response.Body())
 	if err != nil {
-		return nil, err.WrapError()
+		return nil, err.WrapError(fmt.Sprintf("response: { %s }", response.Body()))
 	}
 
 	return feedData, nil
